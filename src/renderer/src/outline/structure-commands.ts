@@ -59,7 +59,7 @@ export function move(
 ): ChangeSet {
   const node = model.getNode(id);
   model.getNode(newParentId);
-  checkNotRoot(model, id, "moved");
+  model.checkNotRoot(id, "moved");
   if (model.isInSubtree(newParentId, id)) {
     throw new OutlineError(
       "moveIntoSelf",
@@ -76,10 +76,10 @@ export function move(
   return relocate(model, node, newParentId, afterId);
 }
 
-/** Makes the node the last child of its previous sibling. */
+/** Makes the node the last child of its previous sibling and expands that sibling. */
 export function indent(model: OutlineModel, id: string): ChangeSet {
   const node = model.getNode(id);
-  checkNotRoot(model, id, "indented");
+  model.checkNotRoot(id, "indented");
   const siblings = model.childIds(node.parentId);
   const index = siblings.indexOf(id);
   if (index === 0) {
@@ -92,13 +92,18 @@ export function indent(model: OutlineModel, id: string): ChangeSet {
   const newSiblings = model.childIds(newParentId);
   const lastId =
     newSiblings.length > 0 ? newSiblings[newSiblings.length - 1] : null;
-  return relocate(model, node, newParentId, lastId);
+  const parentState = model.uiState.get(newParentId);
+  return relocate(model, node, newParentId, lastId, () => {
+    if (parentState?.collapsed === true) {
+      model.putUiState({ ...parentState, collapsed: false });
+    }
+  });
 }
 
 /** Makes the node the next sibling of its parent. */
 export function unindent(model: OutlineModel, id: string): ChangeSet {
   const node = model.getNode(id);
-  checkNotRoot(model, id, "unindented");
+  model.checkNotRoot(id, "unindented");
   const parent = model.getNode(node.parentId as string);
   if (parent.parentId === null) {
     throw new OutlineError(
@@ -112,7 +117,7 @@ export function unindent(model: OutlineModel, id: string): ChangeSet {
 /** Deletes the node with its whole subtree. The empty tail rule does not apply. */
 export function deleteNode(model: OutlineModel, id: string): ChangeSet {
   model.getNode(id);
-  checkNotRoot(model, id, "deleted");
+  model.checkNotRoot(id, "deleted");
   const ids = model.subtreeIds(id);
   return model.record(() => {
     for (let i = ids.length - 1; i >= 0; i--) {
@@ -126,6 +131,7 @@ function relocate(
   node: Node,
   newParentId: string,
   afterId: string | null,
+  alsoMutate: () => void = () => {},
 ): ChangeSet {
   const oldParentId = node.parentId as string;
   const isEmpty = (s: string): boolean => isEmptyNode(model.getNode(s));
@@ -151,23 +157,15 @@ function relocate(
   }
 
   const sortKey = model.sortKeyAfter(newParentId, afterId, node.id);
-  return model.record(() =>
+  return model.record(() => {
     model.putNode({
       ...node,
       parentId: newParentId,
       sortKey,
       modifiedAt: model.now(),
-    }),
-  );
-}
-
-function checkNotRoot(model: OutlineModel, id: string, action: string): void {
-  if (model.isRoot(id)) {
-    throw new OutlineError(
-      "rootNotAllowed",
-      `The global root cannot be ${action}`,
-    );
-  }
+    });
+    alsoMutate();
+  });
 }
 
 function checkAfter(

@@ -188,6 +188,49 @@ describe("indent", () => {
     expect(store.getChildren("a")).toEqual(["b"]);
   });
 
+  it("expands a collapsed new parent in the same change set", () => {
+    const { store } = createOutline(`
+      a
+        x
+      b
+    `);
+    store.setCollapsed("a", true);
+    const changes = store.indent("b");
+    expect(store.getUiState("a")).toEqual({
+      nodeId: "a",
+      collapsed: false,
+      scrollTop: null,
+    });
+    expect(changes.nodes.upsert).toEqual([store.getNode("b")]);
+    expect(changes.uiState).toEqual({
+      upsert: [store.getUiState("a")],
+      delete: [],
+      before: [{ nodeId: "a", collapsed: true, scrollTop: null }],
+    });
+  });
+
+  it("does not change the UI state of an expanded new parent", () => {
+    const { store } = createOutline(`
+      a
+      b
+    `);
+    const changes = store.indent("b");
+    expect(store.getUiState("a")).toBeUndefined();
+    expect(changes.uiState.upsert).toEqual([]);
+  });
+
+  it("does not expand the new parent if the indent is rejected", () => {
+    const { store } = createOutline(`
+      a
+        ~e
+      ~f
+      b
+    `);
+    store.setCollapsed("a", true);
+    expectRejected(store, () => store.indent("f"), "emptyTail");
+    expect(store.getUiState("a")?.collapsed).toBe(true);
+  });
+
   it("rejects the first child", () => {
     const { store } = createOutline(`
       a
