@@ -49,5 +49,6 @@
     - Scroll position
   - Attributes
     - #todo
+    - Idea: an arbitrary key-value map of attributes per node. The note would be just another attribute.
 - Tag
   - #todo

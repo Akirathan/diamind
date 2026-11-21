@@ -3,9 +3,10 @@
 - Inspired by Workflowy.
 - Every node can have a *note* - a multi-line text displayed below the node text.
   - Attachment nodes can also have a note (e.g. as a caption).
+  - Later, the note may become one of the node [attributes](data-model.md).
 - Display
   - Smaller and grey font, aligned with the node text.
-  - The whole note is visible. #todo truncate long notes?
+  - The whole note is always visible. Long notes are not truncated.
   - Same markdown live preview as the node text, see [Text editing](text-editing.md).
 - Editing
   - `Shift + Enter` in the node text moves the cursor to the end of the note. Creates the note if it does not exist.

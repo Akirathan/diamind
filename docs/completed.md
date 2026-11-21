@@ -11,6 +11,7 @@
   - A global toggle, stored per device in `app_state`. Visible by default.
   - Available in the command palette. #todo default keyboard shortcut.
   - When hidden, completed nodes and their children are not displayed and not matched by Search, Jump to and Filter.
+    - Exception: the *Include completed nodes* checkbox in [Global search](search.md#global-search).
 - A new node created by `Enter` in a completed node is not completed.
 - Stored as `completed_at` (timestamp, empty if not completed), see [Storage](storage.md).
 - Import: `_complete="true"` in a Workflowy OPML outline marks the node as completed, with the import time as `completed_at`.

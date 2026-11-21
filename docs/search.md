@@ -22,3 +22,6 @@
   - parent_node_text
     - if filled, will only match a text node that is under a parent with `parent_node_text` . Empty by default.
     - Does not have to be an immediate parent. Search should be done up to the root.
+  - Include completed nodes
+    - A checkbox, unchecked by default.
+    - If checked, completed nodes are matched even when they are hidden. See [Completed nodes](completed.md).
