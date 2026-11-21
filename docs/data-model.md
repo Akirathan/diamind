@@ -54,6 +54,8 @@
     - Any node can have attributes, including attachment nodes.
     - For now, only data. No UI for displaying or editing attributes.
     - Later: search by attributes, display of attributes, ...
-    - The note and `completed_at` are separate fields, not attributes. #todo decide whether the note should be an attribute.
+    - The note and `completed_at` are separate fields, not attributes.
+      - They have their own behavior (editing, search, empty rule, merge) and a fixed type.
+      - Attributes are for user data, e.g. a due date, a URL or a status.
 - Tag
   - #todo

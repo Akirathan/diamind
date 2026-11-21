@@ -3,7 +3,7 @@
 - Inspired by Workflowy.
 - Every node can have a *note* - a multi-line text displayed below the node text.
   - Attachment nodes can also have a note (e.g. as a caption).
-  - Later, the note may become one of the node [attributes](data-model.md).
+  - The note is a separate field, not one of the node [attributes](data-model.md).
 - Display
   - Smaller and grey font, aligned with the node text.
   - The whole note is always visible. Long notes are not truncated.
