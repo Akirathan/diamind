@@ -98,12 +98,7 @@ describe("OutlineRowsSource", () => {
 
     store.setCollapsed("a", true);
     expect(notified).toBe(1);
-    expect(rowsText(source.getRows())).toEqual([
-      "0:a",
-      "0:b",
-      "1:b1",
-      "0:c",
-    ]);
+    expect(rowsText(source.getRows())).toEqual(["0:a", "0:b", "1:b1", "0:c"]);
   });
 
   it("keeps the rows current without a subscriber", () => {
