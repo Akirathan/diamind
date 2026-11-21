@@ -48,7 +48,12 @@
     - Collapse / expand state of the children nodes.
     - Scroll position
   - Attributes
-    - #todo
-    - Idea: an arbitrary key-value map of attributes per node. The note would be just another attribute.
+    - An arbitrary key-value map per node.
+      - Key: a non-empty string.
+      - Value: any JSON value (string, number, boolean, null, array, object).
+    - Any node can have attributes, including attachment nodes.
+    - For now, only data. No UI for displaying or editing attributes.
+    - Later: search by attributes, display of attributes, ...
+    - The note and `completed_at` are separate fields, not attributes. #todo decide whether the note should be an attribute.
 - Tag
   - #todo

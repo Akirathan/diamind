@@ -43,6 +43,7 @@ nodes
   text          TEXT NOT NULL DEFAULT ''
   note          TEXT NOT NULL DEFAULT ''
   completed_at  INTEGER       -- NULL if not completed
+  attributes    TEXT          -- JSON object, NULL if the node has no attributes
   attachment_id TEXT
   created_at    INTEGER NOT NULL
   modified_at   INTEGER NOT NULL
@@ -78,6 +79,8 @@ children: Map<string | null, string[]>   // sorted by sortKey
 uiState: Map<string, NodeUiState>
 ```
 
+- `Node.attributes` is `undefined` for nodes without attributes, to save memory.
+
 - `children` is not stored. It is built at startup from `parentId` and `sortKey` (~80 ms for 500k nodes).
 
 ## Commands
@@ -92,6 +95,7 @@ uiState: Map<string, NodeUiState>
   - `setCollapsed(id, collapsed)`
   - `setNote(id, note)`
   - `setCompleted(ids, completed)`
+  - `setAttribute(id, key, value)`, `removeAttribute(id, key)`
 - A command:
   1. Validates the rules of the [data model](data-model.md), e.g. two empty siblings, indentation only by +-1.
   2. Mutates the in-memory model.

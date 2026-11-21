@@ -9,7 +9,7 @@
   - The children of a completed node are displayed grey too, but are not marked as completed themselves.
 - Show / hide completed
   - A global toggle, stored per device in `app_state`. Visible by default.
-  - Available in the command palette. #todo default keyboard shortcut.
+  - Default keyboard shortcut: `Cmd + O` (as in Workflowy). Also available in the command palette.
   - When hidden, completed nodes and their children are not displayed and not matched by Search, Jump to and Filter.
     - Exception: the *Include completed nodes* checkbox in [Global search](search.md#global-search).
 - A new node created by `Enter` in a completed node is not completed.

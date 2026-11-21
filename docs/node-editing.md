@@ -7,6 +7,10 @@
   - Complete / Uncomplete, see [Completed nodes](completed.md)
 - Hiting `Tab` on any position in the node *indents* it.
 - Hitting `Shift + Tab`  on any position in the node *unindents* it.
+- Hitting `Enter` in a node with text:
+  - At the end of the text: a new empty sibling is created below the node.
+  - In the middle of the text: the node is *split*. The text after the cursor moves to a new sibling below the node.
+    - The original node keeps its id, `created_at`, format, note, attributes and children.
 - Hitting `Enter` in an empty node:
   - If the node is the last child, it is *unindented*.
     - If the node is a child of the global root or of the local root, nothing happens.
@@ -18,6 +22,7 @@
   - The text of the merged node is appended to the text of the upper node.
   - The children of the merged node are appended to the children of the upper node.
   - The note of the merged node is appended to the note of the upper node, see [Notes](notes.md).
+  - Attributes of the merged node are added to the upper node. If both have the same key, the value of the upper node wins.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
 - Attachment nodes have no text cursor. When the cursor moves to an attachment node (`Up` / `Down`), the node is *selected* (highlighted).
