@@ -25,6 +25,13 @@ npm run check        # format check, typecheck, unit tests, e2e tests
 | `npm run format`       | Format all files (Prettier)             |
 | `npm run format:check` | Check formatting                        |
 | `npm run check`        | All of the checks above, as before a PR |
+| `npm run db:generate`  | Generate a migration from the DB schema |
+
+### Database
+
+- The schema is in `src/main/db/schema.ts`. After a change, run `npm run db:generate` and commit the new files in `src/main/db/migrations/`. The app applies them at startup.
+- `better-sqlite3` ships prebuilt [Node-API](https://nodejs.org/api/n-api.html) binaries. Node-API is ABI-stable, so the same binary loads in Electron and in plain Node (vitest). No rebuild for Electron is necessary.
+- `npx tsx scripts/bench-startup-read.ts <count>` measures the startup read of `<count>` generated nodes.
 
 Data is stored in `~/.local/share/diamind`. Set `DIAMIND_DATA_DIR` to use another directory.
 
