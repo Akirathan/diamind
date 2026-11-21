@@ -74,9 +74,9 @@ app_state       -- per device
 ## In-memory model
 
 ```ts
-nodes: Map<string, Node>
-children: Map<string | null, string[]>   // sorted by sortKey
-uiState: Map<string, NodeUiState>
+nodes: Map<string, Node>;
+children: Map<string | null, string[]>; // sorted by sortKey
+uiState: Map<string, NodeUiState>;
 ```
 
 - `Node.attributes` is `undefined` for nodes without attributes, to save memory.

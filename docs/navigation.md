@@ -1,7 +1,7 @@
 # Navigation
 
 - Navigation is done either by clicking on the bullet of some visible node, or by clicking on a shortcut, like a bookmarked node from the left pane in the hamburger menu.
-- Clicking on the bullet of the node *zooms* into it. The zoomed node becomes the *local root*, see [Data model](data-model.md).
+- Clicking on the bullet of the node _zooms_ into it. The zoomed node becomes the _local root_, see [Data model](data-model.md).
 - Whenever navigating / zooming into a node, it is vital to keep the collapse / expand state of the children.
 
 ## Top-bar navigation
@@ -21,6 +21,6 @@
   - Explorer
   - Bookmarked nodes
   - Global search
-    - default shortcut `Command + Shift + F` 
+    - default shortcut `Command + Shift + F`
     - inspired by VSCode
     - see [Global search](search.md#global-search)
