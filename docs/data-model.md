@@ -2,8 +2,8 @@
 
 - mostly inspired by Workflowy
 - Terminology
-  - *Global root* - the node with indentation 0. There is exactly one.
-  - *Local root* - the node that is currently zoomed into. It is the top of the visible tree.
+  - _Global root_ - the node with indentation 0. There is exactly one.
+  - _Local root_ - the node that is currently zoomed into. It is the top of the visible tree.
 - Node
   - Type
     - Text (bullet, paragraph, heading, ...)
@@ -35,13 +35,13 @@
     - heading 1
     - heading 2
     - heading 3
-    - divider 
+    - divider
   - A node can be empty (empty text and empty note). In such case, it will usually be displayed as an empty bullet.
     - The last two children of a node cannot both be empty.
     - Two (or more) empty siblings are allowed if a non-empty sibling follows them.
     - See `Enter` in an empty node in [Node editing](node-editing.md).
   - Indent / Unindent
-    - Usually done by hitting `Tab`  when cursor is anywhere in the node.
+    - Usually done by hitting `Tab` when cursor is anywhere in the node.
     - Only +-1 level of indentation is allowed for the child node.
   - State
     - UI state, stored per device, separately from the node data. See [Storage](storage.md).

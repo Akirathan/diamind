@@ -2,16 +2,16 @@
 
 ## Find in zoomed node
 
-- `Command + F`  - search in currently zoomed node
+- `Command + F` - search in currently zoomed node
 - design inspiration from VSCode
 - displays found text as gutters on scrollbar
 - has "next match" and "previous match" arrows.
 
 ## Global search
 
-- Triggered by `Cmd + Shift + F` 
+- Triggered by `Cmd + Shift + F`
 - Inspired by VSCode.
-- Opens a *global search left pane*.
+- Opens a _global search left pane_.
 - Format of the card rows is the same as in [Jump to](jump-to.md), that is:
   - The (partial) substring match highlighted in trimmed text of the node
   - navigation to the text node - breadcrumbs.

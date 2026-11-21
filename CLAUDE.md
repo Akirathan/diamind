@@ -23,7 +23,7 @@ DiaMind
 - Develop
   - Do frequent commits with brief and clear descriptions.
   - Split long source files (say more than 1000 lines) into multiple ones with clear names.
-  - Unit test whatever makes sense to unit test. 
+  - Unit test whatever makes sense to unit test.
   - Introduce playwright end-to-end tests.
     - No screenshot comparisons.
   - Keep the comments in the code brief and clear. Do not comment self-explaining code. Avoid unnecessary and duplicate comments.
@@ -34,6 +34,9 @@ DiaMind
     - Only docs changes can be pushed directly to `main` .
   - At the beginning, do not introduce GH actions - I want to save GH actions time.
     - typecheck, unit tests, e2e tests and formatting should be done locally so far.
+      - `npm run check` runs all of them. See `README.md` for the other scripts.
+  - Layout: `src/main` (main process), `src/preload` (IPC bridge), `src/renderer` (React), `src/shared` (types shared by all), `e2e` (Playwright).
+  - `DIAMIND_DATA_DIR` overrides the data directory, e.g. in e2e tests.
 
 ## Docs
 
@@ -55,16 +58,16 @@ Detailed descriptions are in the `docs` folder:
 ## Other features
 
 - Cmdline
-  - `diamind`  should also be launchable from cmd line.
+  - `diamind` should also be launchable from cmd line.
 - Scrollbar is always visible and is rectangular.
   - Inspired by VSCode.
 - Tabs
-  - 
+  -
 - Calendar and dates
-  - 
+  -
 - Export to markdown
   - Attachment node
-    - 
+    -
 - Import
-  - 
+  -
 - Preferences and logs are stored in local directory, by default, `~/.local/share/diamind` .

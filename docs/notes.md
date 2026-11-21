@@ -1,7 +1,7 @@
 # Notes
 
 - Inspired by Workflowy.
-- Every node can have a *note* - a multi-line text displayed below the node text.
+- Every node can have a _note_ - a multi-line text displayed below the node text.
   - Attachment nodes can also have a note (e.g. as a caption).
   - The note is a separate field, not one of the node [attributes](data-model.md).
 - Display
@@ -15,7 +15,7 @@
   - `Up` / `Down` move between the node text and the note as if they were consecutive lines.
   - The note has its own CodeMirror editor. It exists only if the note is not empty or is focused.
 - A note that becomes empty is removed when it loses focus.
-- A node is *empty* only if both its text and its note are empty. See the empty sibling rules in [Data model](data-model.md).
+- A node is _empty_ only if both its text and its note are empty. See the empty sibling rules in [Data model](data-model.md).
 - `Backspace` merge: the note of the merged node is appended to the note of the upper node, separated by a new line.
 - Search, Jump to and Filter also match the text of notes.
 - Import: the `_note` attribute of a Workflowy OPML outline becomes the note.
