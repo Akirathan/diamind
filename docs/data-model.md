@@ -1,6 +1,9 @@
 # Data model
 
 - mostly inspired by Workflowy
+- Terminology
+  - *Global root* - the node with indentation 0. There is exactly one.
+  - *Local root* - the node that is currently zoomed into. It is the top of the visible tree.
 - Node
   - Type
     - Text (bullet, paragraph, heading, ...)
@@ -11,12 +14,12 @@
   - Data
     - id
     - parent_id
-      - empty for the root
+      - empty for the global root
     - sort_key
       - order between siblings
     - Indentation
       - derived from the chain of parents, not stored.
-      - 0 is for the root
+      - 0 is for the global root
       - can be a positive integer greater than 0.
     - type
     - format

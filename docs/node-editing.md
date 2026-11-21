@@ -8,10 +8,24 @@
 - Hitting `Shift + Tab`  on any position in the node *unindents* it.
 - Hitting `Enter` in an empty node:
   - If the node is the last child, it is *unindented*.
+    - If the node is a child of the global root or of the local root, nothing happens.
+    - If the unindent would make the last two children of the new parent empty, nothing happens. #todo revisit this corner case.
   - If the node is not the last child, a new empty sibling is created below it.
   - Follows the rule about empty siblings in [Data model](data-model.md).
+- Hitting `Backspace` at the beginning of a node merges it into the previous visible node (the *upper node*).
+  - The upper node keeps its id, `created_at` and format.
+  - The text of the merged node is appended to the text of the upper node.
+  - The children of the merged node are appended to the children of the upper node.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
+
+## Multi-node selection
+
+- When a text selection extends over the boundary of a node, it becomes a selection of whole nodes.
+- These work on a multi-node selection:
+  - `Tab` and `Shift + Tab` - indent / unindent all selected nodes.
+  - `Delete` - deletes all selected nodes.
+  - Copy and paste.
 
 ## Indent lines
 
