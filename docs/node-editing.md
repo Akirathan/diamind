@@ -6,6 +6,8 @@
   - Turn Into -> Bullets, Paragraph, Code block, Heading 1, Heading 2, Heading 3, Divider
 - Hiting `Tab` on any position in the node *indents* it.
 - Hitting `Shift + Tab`  on any position in the node *unindents* it.
+- Hitting `Enter` in an empty node does nothing.
+  - Follows from the rule that two sibling nodes cannot be empty, see [Data model](data-model.md).
 
 ## Indent lines
 

@@ -31,6 +31,7 @@
     - divider 
   - A node can be empty. In such case, it will usually be displayed as an empty bullet.
     - Two sibling nodes cannot be empty. 
+      - Hence, hitting `Enter` in an empty node does nothing.
   - Indent / Unindent
     - Usually done by hitting `Tab`  when cursor is anywhere in the node.
     - Only +-1 level of indentation is allowed for the child node.

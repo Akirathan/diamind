@@ -17,6 +17,8 @@ DiaMind
     - playwright for end-to-end tests.
     - prettier
     - SQLite (better-sqlite3) via drizzle, in the main process only.
+    - CodeMirror 6 for text editing.
+  - Vim key bindings are postponed.
   - Only one window at the start.
 - Develop
   - Do frequent commits with brief and clear descriptions.
