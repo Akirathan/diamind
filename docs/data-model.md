@@ -1,0 +1,37 @@
+# Data model
+
+- mostly inspired by Workflowy
+- Node
+  - Type
+    - Text (bullet, paragraph, heading, ...)
+    - Attachment (PNG, JPG, PDF, ...)
+      - An attachment node only displays the attachment inline
+      - Attachment node cannot have both attachment and text.
+      - Attachment node still displays the bullet on the left. This is unlike Workflowy, which does not display bullet when you upload a file to a node.
+  - Data
+    - Indentation
+      - 0 is for the root
+      - can be a positive integer greater than 0.
+    - type
+    - format
+    - created_at
+    - modified_at
+  - format
+    - bullet
+    - paragraph
+    - heading 1
+    - heading 2
+    - heading 3
+    - divider 
+  - A node can be empty. In such case, it will usually be displayed as an empty bullet.
+    - Two sibling nodes cannot be empty. 
+  - Indent / Unindent
+    - Usually done by hitting `Tab`  when cursor is anywhere in the node.
+    - Only +-1 level of indentation is allowed for the child node.
+  - State
+    - Collapse / expand state of the children nodes.
+    - Scroll position
+  - Attributes
+    - #todo
+- Tag
+  - #todo
