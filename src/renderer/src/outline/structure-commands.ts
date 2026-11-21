@@ -109,16 +109,10 @@ export function unindent(model: OutlineModel, id: string): ChangeSet {
   return relocate(model, node, parent.parentId, parent.id);
 }
 
-/** Deletes the node with its whole subtree. */
+/** Deletes the node with its whole subtree. The empty tail rule does not apply. */
 export function deleteNode(model: OutlineModel, id: string): ChangeSet {
-  const node = model.getNode(id);
+  model.getNode(id);
   checkNotRoot(model, id, "deleted");
-  const siblings = model.childIds(node.parentId);
-  checkEmptyTail(
-    siblings,
-    siblings.filter((s) => s !== id),
-    (s) => isEmptyNode(model.getNode(s)),
-  );
   const ids = model.subtreeIds(id);
   return model.record(() => {
     for (let i = ids.length - 1; i >= 0; i--) {

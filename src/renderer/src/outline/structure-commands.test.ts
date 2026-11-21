@@ -444,12 +444,18 @@ describe("deleteNode", () => {
     expectRejected(store, () => store.deleteNode("x"), "nodeNotFound");
   });
 
-  it("rejects two empty last children left behind", () => {
+  it("allows two empty last children left behind", () => {
     const { store } = createOutline(`
       ~e
       ~f
       a
     `);
-    expectRejected(store, () => store.deleteNode("a"), "emptyTail");
+    store.deleteNode("a");
+    expect(dump(store)).toBe(
+      outline(`
+        ~e
+        ~f
+      `),
+    );
   });
 });
