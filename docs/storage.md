@@ -41,6 +41,8 @@ nodes
   type          TEXT NOT NULL -- 'text' | 'attachment'
   format        TEXT NOT NULL -- 'bullet' | 'paragraph' | 'h1' | 'h2' | 'h3' | 'divider'
   text          TEXT NOT NULL DEFAULT ''
+  note          TEXT NOT NULL DEFAULT ''
+  completed_at  INTEGER       -- NULL if not completed
   attachment_id TEXT
   created_at    INTEGER NOT NULL
   modified_at   INTEGER NOT NULL
@@ -58,7 +60,7 @@ node_ui_state   -- per device, not part of the outline
   scroll_top INTEGER        -- scroll position when zoomed into this node
 
 app_state       -- per device
-  key   TEXT PRIMARY KEY   -- e.g. 'zoomedNodeId', 'navigationHistory'
+  key   TEXT PRIMARY KEY   -- e.g. 'zoomedNodeId', 'navigationHistory', 'showCompleted'
   value TEXT NOT NULL      -- JSON
 ```
 
@@ -88,6 +90,8 @@ uiState: Map<string, NodeUiState>
   - `move(id, newParentId, afterId)`
   - `deleteNode(id)` - deletes the whole subtree
   - `setCollapsed(id, collapsed)`
+  - `setNote(id, note)`
+  - `setCompleted(ids, completed)`
 - A command:
   1. Validates the rules of the [data model](data-model.md), e.g. two empty siblings, indentation only by +-1.
   2. Mutates the in-memory model.

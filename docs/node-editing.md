@@ -4,6 +4,7 @@
 - Bullet point enables drag-and-drop of the node
 - Three dots gives a context menu for the node:
   - Turn Into -> Bullets, Paragraph, Code block, Heading 1, Heading 2, Heading 3, Divider
+  - Complete / Uncomplete, see [Completed nodes](completed.md)
 - Hiting `Tab` on any position in the node *indents* it.
 - Hitting `Shift + Tab`  on any position in the node *unindents* it.
 - Hitting `Enter` in an empty node:
@@ -16,6 +17,7 @@
   - The upper node keeps its id, `created_at` and format.
   - The text of the merged node is appended to the text of the upper node.
   - The children of the merged node are appended to the children of the upper node.
+  - The note of the merged node is appended to the note of the upper node, see [Notes](notes.md).
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
 - Attachment nodes have no text cursor. When the cursor moves to an attachment node (`Up` / `Down`), the node is *selected* (highlighted).

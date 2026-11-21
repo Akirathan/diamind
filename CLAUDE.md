@@ -49,6 +49,8 @@ Detailed descriptions are in the `docs` folder:
 - [Text editing](docs/text-editing.md) - WYSIWYG markdown, links
 - [Sticky scroll](docs/sticky-scroll.md)
 - [Filter](docs/filter.md)
+- [Notes](docs/notes.md) - multi-line note below a node
+- [Completed nodes](docs/completed.md)
 
 ## Other features
 

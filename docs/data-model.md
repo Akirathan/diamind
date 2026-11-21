@@ -23,6 +23,10 @@
       - can be a positive integer greater than 0.
     - type
     - format
+    - note
+      - multi-line text below the node text, see [Notes](notes.md).
+    - completed_at
+      - empty if not completed, see [Completed nodes](completed.md).
     - created_at
     - modified_at
   - format
@@ -32,7 +36,7 @@
     - heading 2
     - heading 3
     - divider 
-  - A node can be empty. In such case, it will usually be displayed as an empty bullet.
+  - A node can be empty (empty text and empty note). In such case, it will usually be displayed as an empty bullet.
     - The last two children of a node cannot both be empty.
     - Two (or more) empty siblings are allowed if a non-empty sibling follows them.
     - See `Enter` in an empty node in [Node editing](node-editing.md).
