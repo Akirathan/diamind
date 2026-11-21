@@ -1,7 +1,7 @@
 # Completed nodes
 
 - Inspired by Workflowy.
-- Any node can be marked as _completed_.
+- Any node can be marked as _completed_, except the global root.
 - `Cmd + Enter` toggles the completed state of the current node, or of all nodes in a multi-node selection.
   - Also available in the three dots context menu: _Complete_ / _Uncomplete_.
 - Display

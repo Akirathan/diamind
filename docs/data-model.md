@@ -15,6 +15,7 @@
     - id
     - parent_id
       - empty for the global root
+      - The global root cannot be deleted, moved, indented, unindented, completed or collapsed.
     - sort_key
       - order between siblings
     - Indentation
@@ -37,7 +38,10 @@
     - heading 3
     - divider
   - A node can be empty (empty text and empty note). In such case, it will usually be displayed as an empty bullet.
+    - Divider and attachment nodes are never empty.
     - The last two children of a node cannot both be empty.
+      - Enforced when inserting, moving, indenting and unindenting a node.
+      - Not enforced when editing text or a note, and not when deleting a node. Deleting a node can leave the last two children empty.
     - Two (or more) empty siblings are allowed if a non-empty sibling follows them.
     - See `Enter` in an empty node in [Node editing](node-editing.md).
   - Indent / Unindent

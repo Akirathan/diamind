@@ -99,7 +99,8 @@ uiState: Map<string, NodeUiState>;
 - A command:
   1. Validates the rules of the [data model](data-model.md), e.g. two empty siblings, indentation only by +-1.
   2. Mutates the in-memory model.
-  3. Records the changed rows: `{ upsert: Row[], delete: string[] }`.
+  3. Returns a _change set_ of the changed rows, per table (`nodes`, `uiState`): `{ upsert, delete, before }`.
+     - `before` holds the previous version of every changed or deleted row. Undo builds the inverse commands from it.
   4. Records its inverse command for undo.
   5. Notifies React about the changed nodes.
 - Commands are plain TypeScript, unit tested without Electron and SQLite.

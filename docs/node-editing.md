@@ -6,6 +6,7 @@
   - Turn Into -> Bullets, Paragraph, Code block, Heading 1, Heading 2, Heading 3, Divider
   - Complete / Uncomplete, see [Completed nodes](completed.md)
 - Hiting `Tab` on any position in the node _indents_ it.
+  - If the new parent is collapsed, it is expanded, so the node stays visible.
 - Hitting `Shift + Tab` on any position in the node _unindents_ it.
 - Hitting `Enter` in a node with text:
   - At the end of the text: a new empty sibling is created below the node.
