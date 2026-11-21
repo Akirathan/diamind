@@ -127,4 +127,3 @@ uiState: Map<string, NodeUiState>
 
 - `~/.local/share/diamind/diamind.db` - the database
 - `~/.local/share/diamind/attachments/` - attachment files
-- `~/.local/share/diamind/backups/` - daily `VACUUM INTO` copies of the database
