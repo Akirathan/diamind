@@ -18,38 +18,10 @@ export function nodeToRow(node: Node): NodeRow {
   };
 }
 
-export function rowToNode(row: NodeRow): Node {
-  const node: Node = {
-    id: row.id,
-    parentId: row.parentId,
-    sortKey: row.sortKey,
-    type: row.type,
-    format: row.format,
-    text: row.text,
-    note: row.note,
-    completedAt: row.completedAt,
-    attachmentId: row.attachmentId,
-    createdAt: row.createdAt,
-    modifiedAt: row.modifiedAt,
-  };
-  if (row.attributes === null) {
-    return node;
-  }
-  return { ...node, attributes: row.attributes };
-}
-
 export function uiStateToRow(state: NodeUiState): NodeUiStateRow {
   return {
     nodeId: state.nodeId,
     collapsed: state.collapsed,
     scrollTop: state.scrollTop,
-  };
-}
-
-export function rowToUiState(row: NodeUiStateRow): NodeUiState {
-  return {
-    nodeId: row.nodeId,
-    collapsed: row.collapsed,
-    scrollTop: row.scrollTop,
   };
 }

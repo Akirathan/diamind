@@ -7,7 +7,7 @@ import {
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { DiamindApi } from "../src/shared/api";
+import { parseOutlineJson, type DiamindApi } from "../src/shared/api";
 
 let app: ElectronApplication;
 let dataDir: string;
@@ -52,6 +52,6 @@ test("creates the database and loads an empty outline", async () => {
   const outline = await page.evaluate(() =>
     (window as unknown as { diamind: DiamindApi }).diamind.loadOutline(),
   );
-  expect(outline).toEqual({ nodes: [], uiState: [] });
+  expect(parseOutlineJson(outline)).toEqual({ nodes: [], uiState: [] });
   expect(existsSync(join(dataDir, "diamind.db"))).toBe(true);
 });

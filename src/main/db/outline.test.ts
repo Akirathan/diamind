@@ -3,9 +3,10 @@ import {
   emptyChangeSet,
   type ChangeSet,
 } from "../../shared/outline/change-set";
+import { parseOutlineJson, type LoadedOutline } from "../../shared/api";
 import type { Node } from "../../shared/outline/node";
 import type { Db } from "./database";
-import { applyChangeSet, loadOutline } from "./outline";
+import { applyChangeSet, loadOutline as loadOutlineJson } from "./outline";
 import { openTestDatabase, testNode } from "./test-db";
 
 let db: Db;
@@ -17,6 +18,10 @@ beforeEach(() => {
 afterEach(() => {
   db.$client.close();
 });
+
+function loadOutline(db: Db, nodeChunkRows?: number): LoadedOutline {
+  return parseOutlineJson(loadOutlineJson(db, nodeChunkRows));
+}
 
 function upsertNodes(...nodes: Node[]): ChangeSet {
   const changes = emptyChangeSet();
@@ -63,6 +68,25 @@ describe("loadOutline", () => {
     expect(loaded.completedAt).toBeNull();
     expect(loaded.attachmentId).toBeNull();
     expect("attributes" in loaded).toBe(false);
+  });
+
+  it("keeps the exact value of attribute numbers", () => {
+    const node = testNode("n1", {
+      attributes: {
+        sum: 0.1 + 0.2,
+        big: Number.MAX_SAFE_INTEGER,
+        tiny: 5e-324,
+      },
+    });
+    applyChangeSet(db, upsertNodes(node));
+    expect(loadOutline(db).nodes).toEqual([node]);
+  });
+
+  it("splits nodes into chunks", () => {
+    const many = Array.from({ length: 5 }, (_, i) => testNode(`n${i}`));
+    applyChangeSet(db, upsertNodes(...many));
+    expect(loadOutlineJson(db, 2).nodeChunks).toHaveLength(3);
+    expect(loadOutline(db, 2).nodes).toEqual(many);
   });
 
   it("stores no attributes as SQL NULL", () => {
