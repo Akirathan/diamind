@@ -167,6 +167,24 @@ describe("setCompleted", () => {
     expect(node(store, "b").completedAt).toBeNull();
   });
 
+  it("rejects the global root", () => {
+    const { store } = createOutline(`a`);
+    expectRejected(
+      store,
+      () => store.setCompleted([ROOT], true),
+      "rootNotAllowed",
+    );
+  });
+
+  it("rejects all ids if one is the global root", () => {
+    const { store } = createOutline(`a`);
+    expectRejected(
+      store,
+      () => store.setCompleted(["a", ROOT], true),
+      "rootNotAllowed",
+    );
+  });
+
   it("rejects all ids if one is missing", () => {
     const { store } = createOutline(`a`);
     expectRejected(
@@ -203,6 +221,15 @@ describe("setCollapsed", () => {
     expect(expanded.uiState.before).toEqual([
       { nodeId: "a", collapsed: true, scrollTop: null },
     ]);
+  });
+
+  it("rejects the global root", () => {
+    const { store } = createOutline(`a`);
+    expectRejected(
+      store,
+      () => store.setCollapsed(ROOT, true),
+      "rootNotAllowed",
+    );
   });
 
   it("keeps the scroll position", () => {

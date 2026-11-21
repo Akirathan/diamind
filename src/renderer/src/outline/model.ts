@@ -53,6 +53,15 @@ export class OutlineModel {
     return id === this.rootId;
   }
 
+  checkNotRoot(id: string, action: string): void {
+    if (this.isRoot(id)) {
+      throw new OutlineError(
+        "rootNotAllowed",
+        `The global root cannot be ${action}`,
+      );
+    }
+  }
+
   /** True if `id` is `ancestorId` or lies in its subtree. */
   isInSubtree(id: string, ancestorId: string): boolean {
     let current: string | null = id;

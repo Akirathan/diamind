@@ -53,6 +53,9 @@ export function setCompleted(
   completed: boolean,
 ): ChangeSet {
   const nodes = ids.map((id) => model.getNode(id));
+  for (const id of ids) {
+    model.checkNotRoot(id, "completed");
+  }
   const now = model.now();
   return model.record(() => {
     for (const node of nodes) {
@@ -74,6 +77,7 @@ export function setCollapsed(
   collapsed: boolean,
 ): ChangeSet {
   model.getNode(id);
+  model.checkNotRoot(id, "collapsed");
   const current = model.uiState.get(id);
   if ((current?.collapsed ?? false) === collapsed) {
     return model.record(() => {});
