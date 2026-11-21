@@ -16,6 +16,8 @@ DiaMind
     - vite + vitest
     - playwright for end-to-end tests.
     - prettier
+    - SQLite (better-sqlite3) via drizzle, in the main process only.
+  - Only one window at the start.
 - Develop
   - Do frequent commits with brief and clear descriptions.
   - Split long source files (say more than 1000 lines) into multiple ones with clear names.
@@ -36,6 +38,7 @@ DiaMind
 Detailed descriptions are in the `docs` folder:
 
 - [Data model](docs/data-model.md)
+- [Storage](docs/storage.md) - in-memory model, SQLite schema, commands, write path
 - [Command palette](docs/command-palette.md)
 - [Search](docs/search.md) - find in zoomed node (`Cmd + F`) and global search (`Cmd + Shift + F`)
 - [Jump to](docs/jump-to.md)

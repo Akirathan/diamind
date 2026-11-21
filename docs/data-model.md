@@ -9,7 +9,13 @@
       - Attachment node cannot have both attachment and text.
       - Attachment node still displays the bullet on the left. This is unlike Workflowy, which does not display bullet when you upload a file to a node.
   - Data
+    - id
+    - parent_id
+      - empty for the root
+    - sort_key
+      - order between siblings
     - Indentation
+      - derived from the chain of parents, not stored.
       - 0 is for the root
       - can be a positive integer greater than 0.
     - type
@@ -29,6 +35,7 @@
     - Usually done by hitting `Tab`  when cursor is anywhere in the node.
     - Only +-1 level of indentation is allowed for the child node.
   - State
+    - UI state, stored per device, separately from the node data. See [Storage](storage.md).
     - Collapse / expand state of the children nodes.
     - Scroll position
   - Attributes
