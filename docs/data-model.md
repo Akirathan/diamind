@@ -30,8 +30,9 @@
     - heading 3
     - divider 
   - A node can be empty. In such case, it will usually be displayed as an empty bullet.
-    - Two sibling nodes cannot be empty. 
-      - Hence, hitting `Enter` in an empty node does nothing.
+    - The last two children of a node cannot both be empty.
+    - Two (or more) empty siblings are allowed if a non-empty sibling follows them.
+    - See `Enter` in an empty node in [Node editing](node-editing.md).
   - Indent / Unindent
     - Usually done by hitting `Tab`  when cursor is anywhere in the node.
     - Only +-1 level of indentation is allowed for the child node.
