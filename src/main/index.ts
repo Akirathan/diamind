@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { IpcChannel, type AppInfo } from "../shared/api";
+import { resolveSeedNodeCount } from "./dev-options";
 import { resolveDataDir } from "./paths";
 
 const dataDir = resolveDataDir();
@@ -51,6 +52,7 @@ function registerIpc(): void {
   ipcMain.handle(IpcChannel.GetAppInfo, (): AppInfo => ({
     version: app.getVersion(),
     dataDir,
+    devSeedNodeCount: resolveSeedNodeCount(process.env, app.isPackaged),
   }));
 }
 

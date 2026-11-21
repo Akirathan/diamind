@@ -5,6 +5,8 @@ export const IpcChannel = {
 export interface AppInfo {
   version: string;
   dataDir: string;
+  /** Generated nodes to seed the outline with, in development and e2e tests only. */
+  devSeedNodeCount: number;
 }
 
 export interface DiamindApi {
