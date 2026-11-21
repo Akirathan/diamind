@@ -7,7 +7,7 @@
 
 ## Why not Yjs
 
-- Measured in [`bench/yjs-memory`](../bench/yjs-memory/README.md).
+- Measured by the Yjs memory benchmark in [PR #1](https://github.com/Akirathan/diamind/pull/1) (closed, not merged).
 - For 500k nodes, Yjs needs ~3 GB of heap and ~7 s to load. Plain objects need ~160 MB and ~0.3 s.
 - Sync between devices is not a goal now. If needed later, sync the commands (see below), not a CRDT of the whole outline.
 
