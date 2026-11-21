@@ -164,12 +164,9 @@ export class UndoHistory {
   }
 
   private apply(step: Step, side: "before" | "after"): ChangeSet {
-    const rows: RestoreRows = {
-      nodes: { put: [], remove: [] },
-      uiState: { put: [], remove: [] },
-    };
-    collectRows(step.nodes, side, rows.nodes);
-    collectRows(step.uiState, side, rows.uiState);
+    const nodes = collectRows(step.nodes, side);
+    const uiState = collectRows(step.uiState, side);
+    const rows: RestoreRows = { nodes, uiState };
     this.applying = true;
     try {
       return this.store.restoreRows(rows);
@@ -219,8 +216,8 @@ function addTable<Row>(
 function collectRows<Row>(
   changes: Map<string, RowChange<Row>>,
   side: "before" | "after",
-  out: { put: Row[]; remove: string[] },
-): void {
+): { put: Row[]; remove: string[] } {
+  const out: { put: Row[]; remove: string[] } = { put: [], remove: [] };
   for (const [id, change] of changes) {
     const row = change[side];
     if (row === undefined) {
@@ -229,6 +226,7 @@ function collectRows<Row>(
       out.put.push(row);
     }
   }
+  return out;
 }
 
 /** `text:<id>` or `note:<id>` if the changes edit only that field of one node. */
