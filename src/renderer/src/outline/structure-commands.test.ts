@@ -459,3 +459,15 @@ describe("deleteNode", () => {
     );
   });
 });
+
+describe("empty tail with dividers", () => {
+  it("allows an empty node after an empty divider", () => {
+    const { store } = createOutline(`
+      a
+      ~d
+    `);
+    store.setFormat("d", "divider");
+    store.insertNode(ROOT, "d");
+    expect(store.getChildren(ROOT)).toEqual(["a", "d", "n1"]);
+  });
+});

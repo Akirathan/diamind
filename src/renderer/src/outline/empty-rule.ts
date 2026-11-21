@@ -1,9 +1,14 @@
 import type { Node } from "../../../shared/outline/node";
 import { OutlineError } from "./errors";
 
-/** An attachment node always shows its attachment, so it is never empty. */
+/** Attachment and divider nodes always show something, so they are never empty. */
 export function isEmptyNode(node: Node): boolean {
-  return node.type === "text" && node.text === "" && node.note === "";
+  return (
+    node.type === "text" &&
+    node.format !== "divider" &&
+    node.text === "" &&
+    node.note === ""
+  );
 }
 
 function hasEmptyTail(
