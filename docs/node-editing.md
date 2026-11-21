@@ -18,6 +18,10 @@
   - The children of the merged node are appended to the children of the upper node.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
+- Attachment nodes have no text cursor. When the cursor moves to an attachment node (`Up` / `Down`), the node is *selected* (highlighted).
+  - `Up` / `Down` moves to the previous / next visible node.
+  - `Backspace` or `Delete` deletes the attachment node.
+  - `Enter` creates a new empty bullet node below it.
 
 ## Multi-node selection
 
