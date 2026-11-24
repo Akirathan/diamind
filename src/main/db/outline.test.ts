@@ -4,7 +4,7 @@ import {
   type ChangeSet,
 } from "../../shared/outline/change-set";
 import { parseOutlineJson, type LoadedOutline } from "../../shared/api";
-import type { Node } from "../../shared/outline/node";
+import type { JsonValue, Node } from "../../shared/outline/node";
 import type { Db } from "./database";
 import { applyChangeSet, loadOutline as loadOutlineJson } from "./outline";
 import { openTestDatabase, testNode } from "./test-db";
@@ -82,6 +82,28 @@ describe("loadOutline", () => {
     expect(loadOutline(db).nodes).toEqual([node]);
   });
 
+  it("round-trips control characters in text and attributes", () => {
+    const node = testNode("n1", {
+      text: 'a\u0000b\u2028\u0001"\\',
+      attributes: { "k\u0000": "v\u0000w", "": '"}{' },
+    });
+    applyChangeSet(db, upsertNodes(node));
+    expect(loadOutline(db).nodes).toEqual([node]);
+  });
+
+  it("loads attributes nested deeper than SQLite's JSON limit", () => {
+    let deep: JsonValue = 1;
+    for (let i = 0; i < 1200; i++) {
+      deep = [deep];
+    }
+    const node = testNode("n1", { attributes: { deep } });
+    applyChangeSet(db, upsertNodes(node));
+    const [loaded] = loadOutline(db).nodes;
+    expect(JSON.stringify(loaded.attributes)).toBe(
+      JSON.stringify(node.attributes),
+    );
+  });
+
   it("splits nodes into chunks", () => {
     const many = Array.from({ length: 5 }, (_, i) => testNode(`n${i}`));
     applyChangeSet(db, upsertNodes(...many));
@@ -131,7 +153,7 @@ describe("applyChangeSet", () => {
     expect(loadOutline(db).nodes.map((n) => n.id)).toEqual(["n2"]);
   });
 
-  it("deletes more nodes than one statement can bind", () => {
+  it("deletes more nodes than fit into one delete chunk", () => {
     const many = Array.from({ length: 1200 }, (_, i) => testNode(`n${i}`));
     applyChangeSet(db, upsertNodes(...many));
     const changes = emptyChangeSet();
