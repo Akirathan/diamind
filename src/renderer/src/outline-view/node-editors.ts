@@ -1,6 +1,7 @@
 import { Annotation, EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import type { OutlineStore } from "@/renderer/src/outline/store";
+import type { CurrentNode } from "@/renderer/src/outline-view/current-node";
 import { Pool } from "@/renderer/src/outline-view/pool";
 import { textChange } from "@/renderer/src/outline-view/text-change";
 
@@ -26,12 +27,19 @@ export class NodeEditors {
   private readonly nodeIdByView = new Map<EditorView, string>();
   private readonly viewByNodeId = new Map<string, EditorView>();
   private readonly unsubscribe: () => void;
+  private readonly unsubscribeCurrent: () => void;
 
-  constructor(private readonly store: OutlineStore) {
+  constructor(
+    private readonly store: OutlineStore,
+    private readonly currentNode: CurrentNode,
+  ) {
     this.extensions = [
       theme,
       EditorView.lineWrapping,
       EditorView.updateListener.of((update) => this.onEditorUpdate(update)),
+      EditorView.domEventHandlers({
+        focus: (_event, view) => this.onEditorFocus(view),
+      }),
     ];
     this.pool = new Pool(
       () => new EditorView({ state: this.createState("") }),
@@ -43,6 +51,9 @@ export class NodeEditors {
         this.syncFromStore(id);
       }
     });
+    this.unsubscribeCurrent = currentNode.subscribe(() =>
+      this.moveFocusToCurrent(),
+    );
   }
 
   get createdCount(): number {
@@ -72,6 +83,7 @@ export class NodeEditors {
 
   dispose(): void {
     this.unsubscribe();
+    this.unsubscribeCurrent();
     for (const view of this.nodeIdByView.keys()) {
       view.destroy();
     }
@@ -95,6 +107,26 @@ export class NodeEditors {
     if (nodeId !== undefined) {
       this.store.setText(nodeId, update.state.doc.toString());
     }
+  }
+
+  private onEditorFocus(view: EditorView): void {
+    const nodeId = this.nodeIdByView.get(view);
+    if (nodeId !== undefined) {
+      this.currentNode.set(nodeId);
+    }
+  }
+
+  /** The cursor moves out of a subtree that collapses. */
+  private moveFocusToCurrent(): void {
+    const currentId = this.currentNode.get();
+    const target =
+      currentId === null ? undefined : this.viewByNodeId.get(currentId);
+    const focused = [...this.nodeIdByView.keys()].find((view) => view.hasFocus);
+    if (target === undefined || focused === undefined || focused === target) {
+      return;
+    }
+    target.dispatch({ selection: { anchor: target.state.doc.length } });
+    target.focus();
   }
 
   /** A minimal replacement keeps the cursor of a focused editor in place. */
