@@ -1,7 +1,9 @@
+import type { ChangeSet } from "@/shared/outline/change-set";
 import type {
   OutlineEvent,
   OutlineStore,
 } from "@/renderer/src/outline/store/store";
+import type { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 /**
  * The node with the cursor. It stays current when the focus leaves the outline,
@@ -12,7 +14,10 @@ export class CurrentNode {
   private readonly listeners = new Set<() => void>();
   private readonly unsubscribe: () => void;
 
-  constructor(private readonly store: OutlineStore) {
+  constructor(
+    private readonly store: OutlineStore,
+    private readonly localRoot?: LocalRoot,
+  ) {
     this.unsubscribe = store.subscribe((event) => this.onStoreChange(event));
   }
 
@@ -48,26 +53,40 @@ export class CurrentNode {
       this.set(null);
       return;
     }
-    const collapsedIds = new Set(
-      changes.uiState.upsert
-        .filter((state) => state.collapsed)
-        .map((state) => state.nodeId),
-    );
+    const collapsedIds = newlyCollapsed(changes);
     if (collapsedIds.size > 0) {
-      this.set(topmostAncestor(this.store, this.id, collapsedIds) ?? this.id);
+      const rootId = this.localRoot?.get() ?? this.store.rootId;
+      this.set(
+        topmostAncestor(this.store, rootId, this.id, collapsedIds) ?? this.id,
+      );
     }
   }
 }
 
-/** The topmost ancestor of `id` that is in `candidates`. */
+function newlyCollapsed({ uiState }: ChangeSet): Set<string> {
+  const before = new Map(uiState.before.map((state) => [state.nodeId, state]));
+  const ids = new Set<string>();
+  for (const { nodeId, collapsed } of uiState.upsert) {
+    if (collapsed && before.get(nodeId)?.collapsed !== true) {
+      ids.add(nodeId);
+    }
+  }
+  return ids;
+}
+
+/** The topmost ancestor of `id` below `rootId` that is in `candidates`. */
 function topmostAncestor(
   store: OutlineStore,
+  rootId: string,
   id: string,
   candidates: ReadonlySet<string>,
 ): string | null {
   let result: string | null = null;
+  if (id === rootId) {
+    return null;
+  }
   let ancestor = store.getNode(id)?.parentId ?? null;
-  while (ancestor !== null) {
+  while (ancestor !== null && ancestor !== rootId) {
     if (candidates.has(ancestor)) {
       result = ancestor;
     }

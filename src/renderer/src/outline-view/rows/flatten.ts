@@ -1,5 +1,7 @@
 import type { ChangeSet } from "@/shared/outline/change-set";
+import { hasTitle } from "@/renderer/src/outline/editing/visible-nodes";
 import type { OutlineStore } from "@/renderer/src/outline/store/store";
+import type { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 export interface OutlineRow {
   readonly id: string;
@@ -8,6 +10,8 @@ export interface OutlineRow {
   readonly hasChildren: boolean;
   /** Always false for a row without children. */
   readonly collapsed: boolean;
+  /** True for the local root, which is the title above its children. */
+  readonly isTitle?: boolean;
 }
 
 interface PendingRow {
@@ -35,6 +39,21 @@ export function flattenVisible(
   return rows;
 }
 
+/** The title and the visible descendants of the local root. */
+export function outlineRows(store: OutlineStore, rootId: string): OutlineRow[] {
+  const rows = flattenVisible(store, rootId);
+  if (hasTitle(store, rootId)) {
+    rows.unshift({
+      id: rootId,
+      depth: 0,
+      hasChildren: rows.length > 0,
+      collapsed: false,
+      isTitle: true,
+    });
+  }
+  return rows;
+}
+
 function pushChildren(
   store: OutlineStore,
   parentId: string,
@@ -51,8 +70,8 @@ function pushChildren(
 export function changesRows(changes: ChangeSet): boolean {
   if (
     changes.nodes.delete.length > 0 ||
-    changes.uiState.upsert.length > 0 ||
-    changes.uiState.delete.length > 0
+    changes.uiState.delete.length > 0 ||
+    changesCollapsed(changes)
   ) {
     return true;
   }
@@ -67,27 +86,37 @@ export function changesRows(changes: ChangeSet): boolean {
   });
 }
 
+function changesCollapsed({ uiState }: ChangeSet): boolean {
+  const before = new Map(uiState.before.map((state) => [state.nodeId, state]));
+  return uiState.upsert.some(
+    (state) =>
+      state.collapsed !== (before.get(state.nodeId)?.collapsed ?? false),
+  );
+}
+
 /**
- * The visible rows of an outline, recomputed only when the structure changes.
+ * The visible rows of an outline, recomputed only when the structure or the local root changes.
  * Several changes in one tick cause one notification. Fits `useSyncExternalStore`.
  */
 export class OutlineRowsSource {
   private rows: OutlineRow[];
   private stale = false;
   private readonly listeners = new Set<() => void>();
-  private readonly unsubscribe: () => void;
+  private readonly unsubscribes: (() => void)[];
 
   constructor(
     private readonly store: OutlineStore,
-    private readonly rootId: string,
+    private readonly localRoot: LocalRoot,
   ) {
-    this.rows = flattenVisible(store, rootId);
-    this.unsubscribe = store.subscribe((event) => {
-      if (!this.stale && changesRows(event.changes)) {
-        this.stale = true;
-        queueMicrotask(() => this.notify());
-      }
-    });
+    this.rows = outlineRows(store, localRoot.get());
+    this.unsubscribes = [
+      store.subscribe((event) => {
+        if (changesRows(event.changes)) {
+          this.markStale();
+        }
+      }),
+      localRoot.subscribe(() => this.markStale()),
+    ];
   }
 
   readonly subscribe = (listener: () => void): (() => void) => {
@@ -100,14 +129,23 @@ export class OutlineRowsSource {
   readonly getRows = (): readonly OutlineRow[] => {
     if (this.stale) {
       this.stale = false;
-      this.rows = flattenVisible(this.store, this.rootId);
+      this.rows = outlineRows(this.store, this.localRoot.get());
     }
     return this.rows;
   };
 
   dispose(): void {
-    this.unsubscribe();
+    for (const unsubscribe of this.unsubscribes) {
+      unsubscribe();
+    }
     this.listeners.clear();
+  }
+
+  private markStale(): void {
+    if (!this.stale) {
+      this.stale = true;
+      queueMicrotask(() => this.notify());
+    }
   }
 
   private notify(): void {

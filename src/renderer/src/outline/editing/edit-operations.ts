@@ -40,11 +40,14 @@ export function enter(
       return cursorAt(id, 0);
     }
   }
+  const format = continuedFormat(node);
+  if (id === rootId) {
+    return enterInTitle(store, id, before, after, format);
+  }
   if (isEmptyNode(getNode(store, id))) {
     return enterInEmptyNode(store, rootId, node);
   }
   const parentId = node.parentId as string;
-  const format = continuedFormat(node);
   if (after === "") {
     return isExpanded(store, id)
       ? insertEmpty(store, id, null, format)
@@ -67,6 +70,22 @@ export function enter(
     store.setCollapsed(id, false);
   }
   return cursorAt(newId, 0);
+}
+
+/** The text after the cursor goes to a new first child. */
+function enterInTitle(
+  store: OutlineStore,
+  id: string,
+  before: string,
+  after: string,
+  format: NodeFormat,
+): NodeCursor {
+  if (after === "") {
+    return insertEmpty(store, id, null, format);
+  }
+  store.setText(id, before);
+  const child = store.insertNode(id, null, format, { text: after });
+  return cursorAt(child.id, 0);
 }
 
 /** The format of a node that is created by an edit of `node`. */
@@ -118,7 +137,7 @@ export function mergeIntoUpper(
   id: string,
 ): NodeCursor | null {
   const upperId = previousVisible(store, rootId, id);
-  if (upperId === null) {
+  if (upperId === null || upperId === rootId) {
     return null;
   }
   const node = getNode(store, id);
@@ -159,9 +178,12 @@ function canMergeChildren(store: OutlineStore, node: Node): boolean {
 }
 
 export function indentNode(
-  { store }: EditContext,
+  { store, rootId }: EditContext,
   cursor: NodeCursor,
-): NodeCursor {
+): NodeCursor | null {
+  if (cursor.nodeId === rootId) {
+    return null;
+  }
   store.indent(cursor.nodeId);
   return cursor;
 }
@@ -170,7 +192,10 @@ export function unindentNode(
   { store, rootId }: EditContext,
   cursor: NodeCursor,
 ): NodeCursor | null {
-  if (getNode(store, cursor.nodeId).parentId === rootId) {
+  if (
+    cursor.nodeId === rootId ||
+    getNode(store, cursor.nodeId).parentId === rootId
+  ) {
     return null;
   }
   store.unindent(cursor.nodeId);

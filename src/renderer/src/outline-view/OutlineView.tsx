@@ -1,37 +1,36 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
 } from "react";
 import { keepCurrentRow } from "@/renderer/src/outline-view/rows/kept-row";
+import type { OutlineRow } from "@/renderer/src/outline-view/rows/flatten";
 import { OutlineRowView } from "@/renderer/src/outline-view/rows/OutlineRowView";
 import { revealCursor } from "@/renderer/src/outline-view/focus/reveal-cursor";
-import {
-  ensureVisibleNode,
-  type OutlineSession,
-} from "@/renderer/src/outline-view/session";
+import type { OutlineSession } from "@/renderer/src/outline-view/session";
 import { useUndoKeys } from "@/renderer/src/outline-view/editing/undo-keys";
 
 const ESTIMATED_ROW_HEIGHT = 24;
 const OVERSCAN = 10;
 
 export function OutlineView({ session }: { session: OutlineSession }) {
-  const { store, rows: rowsSource, editing, editors, currentNode } = session;
+  const {
+    rows: rowsSource,
+    editing,
+    editors,
+    currentNode,
+    localRoot,
+    scrollPositions,
+  } = session;
   const { focus, history } = editing;
   const rows = useSyncExternalStore(rowsSource.subscribe, rowsSource.getRows);
+  const rootId = useSyncExternalStore(localRoot.subscribe, localRoot.get);
   const focusRequest = useSyncExternalStore(focus.subscribe, focus.getRequest);
   const scrollRef = useRef<HTMLDivElement>(null);
   useUndoKeys(history);
-
-  useEffect(() => {
-    if (rows.length === 0) {
-      history.untracked(() => ensureVisibleNode(store, store.rootId));
-    }
-  }, [rows, store, history]);
 
   // A new extractor makes the virtualizer compute the rendered rows again.
   const rangeExtractor = useMemo(
@@ -45,16 +44,31 @@ export function OutlineView({ session }: { session: OutlineSession }) {
     estimateSize: () => ESTIMATED_ROW_HEIGHT,
     overscan: OVERSCAN,
     rangeExtractor,
-    getItemKey: useCallback((index: number) => rows[index].id, [rows]),
+    getItemKey: useCallback((index: number) => rowKey(rows[index]), [rows]),
   });
   const items = virtualizer.getVirtualItems();
+
+  useLayoutEffect(() => {
+    if (scrollRef.current !== null) {
+      return scrollPositions.attach(scrollRef.current);
+    }
+  }, [scrollPositions]);
+
+  // After the effect of the virtualizer, which can scroll too.
+  useLayoutEffect(() => {
+    scrollPositions.restore();
+  }, [rootId, scrollPositions]);
 
   useLayoutEffect(() => {
     if (focusRequest === null) {
       return;
     }
     const view = editors.focus(focusRequest);
-    if (view !== null && scrollRef.current !== null) {
+    if (
+      view !== null &&
+      scrollRef.current !== null &&
+      focusRequest.keepScroll !== true
+    ) {
       revealCursor(view, scrollRef.current);
     }
   }, [focusRequest, editors]);
@@ -87,4 +101,9 @@ export function OutlineView({ session }: { session: OutlineSession }) {
       </div>
     </div>
   );
+}
+
+/** The title has another height than the row of the same node. */
+function rowKey({ id, isTitle }: OutlineRow): string {
+  return isTitle === true ? `title:${id}` : id;
 }

@@ -91,6 +91,26 @@ export function setCollapsed(
   );
 }
 
+/** The scroll position of the view that is zoomed into the node. */
+export function setScrollTop(
+  model: OutlineModel,
+  id: string,
+  scrollTop: number,
+): ChangeSet {
+  model.getNode(id);
+  const current = model.uiState.get(id);
+  if ((current?.scrollTop ?? 0) === scrollTop) {
+    return model.record(() => {});
+  }
+  return model.record(() =>
+    model.putUiState({
+      nodeId: id,
+      collapsed: current?.collapsed ?? false,
+      scrollTop,
+    }),
+  );
+}
+
 export function setAttribute(
   model: OutlineModel,
   id: string,

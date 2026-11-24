@@ -134,6 +134,11 @@ export class OutlineStore {
     return this.run(() => fields.setCollapsed(this.model, id, collapsed));
   }
 
+  /** Not an undo step, so run it in `UndoHistory.untracked()`. */
+  setScrollTop(id: string, scrollTop: number): ChangeSet {
+    return this.run(() => fields.setScrollTop(this.model, id, scrollTop));
+  }
+
   setAttribute(id: string, key: string, value: JsonValue): ChangeSet {
     return this.run(() => fields.setAttribute(this.model, id, key, value));
   }

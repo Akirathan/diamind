@@ -22,11 +22,12 @@ export const OutlineRowView = memo(function OutlineRowView({
   depth,
   hasChildren,
   collapsed,
+  isTitle = false,
   gapAbove,
   session,
   measure,
 }: OutlineRowViewProps) {
-  const { store, editors, currentIndentLine } = session;
+  const { store, editors, currentIndentLine, zoom } = session;
   const editorRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -45,7 +46,8 @@ export const OutlineRowView = memo(function OutlineRowView({
       ref={measure}
       data-index={index}
       data-node-id={id}
-      className="relative flex items-start py-0.5 leading-5"
+      data-title={isTitle}
+      className="relative flex items-start py-0.5 leading-5 data-[title=true]:py-2 data-[title=true]:text-2xl data-[title=true]:font-semibold"
       style={{ marginTop: gapAbove, paddingLeft: depth * INDENT_PX }}
     >
       <IndentLines
@@ -54,16 +56,18 @@ export const OutlineRowView = memo(function OutlineRowView({
         currentIndentLine={currentIndentLine}
       />
       <span className="flex h-[1lh] w-4 shrink-0 items-center">
-        {hasChildren && (
+        {hasChildren && !isTitle && (
           <CollapseArrow
             collapsed={collapsed}
             onToggle={() => store.setCollapsed(id, !collapsed)}
           />
         )}
       </span>
-      <span className="mr-1 flex h-[1lh] w-4 shrink-0 items-center justify-center">
-        <Bullet collapsed={collapsed} />
-      </span>
+      {!isTitle && (
+        <span className="mr-1 flex h-[1lh] w-4 shrink-0 items-center justify-center">
+          <Bullet collapsed={collapsed} onZoom={() => zoom.zoomTo(id)} />
+        </span>
+      )}
       <div ref={editorRef} className="min-w-0 flex-1" />
     </div>
   );
@@ -119,13 +123,27 @@ function CollapseArrow({ collapsed, onToggle }: CollapseArrowProps) {
   );
 }
 
+interface BulletProps {
+  collapsed: boolean;
+  onZoom: () => void;
+}
+
 /** A collapsed node has a ring around the bullet. */
-function Bullet({ collapsed }: { collapsed: boolean }) {
+function Bullet({ collapsed, onZoom }: BulletProps) {
   return (
-    <span
-      data-testid="bullet"
-      data-collapsed={collapsed}
-      className="size-1.5 rounded-full bg-neutral-500 ring-neutral-300 data-[collapsed=true]:ring-4 dark:bg-neutral-400 dark:ring-neutral-600"
-    />
+    <button
+      type="button"
+      aria-label="Zoom in"
+      // Keeps the focus and the cursor in the editor.
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onZoom}
+      className="group flex size-4 cursor-pointer items-center justify-center rounded-full"
+    >
+      <span
+        data-testid="bullet"
+        data-collapsed={collapsed}
+        className="size-1.5 rounded-full bg-neutral-500 ring-neutral-300 group-hover:bg-neutral-800 group-hover:ring-4 data-[collapsed=true]:ring-4 dark:bg-neutral-400 dark:ring-neutral-600 dark:group-hover:bg-neutral-100"
+      />
+    </button>
   );
 }

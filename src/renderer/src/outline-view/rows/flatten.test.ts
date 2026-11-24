@@ -8,6 +8,7 @@ import {
   flattenVisible,
   OutlineRowsSource,
 } from "@/renderer/src/outline-view/rows/flatten";
+import { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 const SOURCE = `
   a
@@ -106,7 +107,7 @@ describe("changesRows", () => {
 describe("OutlineRowsSource", () => {
   it("recomputes the rows and notifies only on a structure change", async () => {
     const { store } = createOutline(SOURCE);
-    const source = new OutlineRowsSource(store, ROOT);
+    const source = new OutlineRowsSource(store, new LocalRoot(ROOT));
     let notified = 0;
     source.subscribe(() => notified++);
     const first = source.getRows();
@@ -124,7 +125,7 @@ describe("OutlineRowsSource", () => {
 
   it("notifies once about several changes in one tick", async () => {
     const { store } = createOutline(SOURCE);
-    const source = new OutlineRowsSource(store, ROOT);
+    const source = new OutlineRowsSource(store, new LocalRoot(ROOT));
     let notified = 0;
     source.subscribe(() => notified++);
     store.setCollapsed("a", true);
@@ -136,14 +137,14 @@ describe("OutlineRowsSource", () => {
 
   it("keeps the rows current without a subscriber", () => {
     const { store } = createOutline(SOURCE);
-    const source = new OutlineRowsSource(store, ROOT);
+    const source = new OutlineRowsSource(store, new LocalRoot(ROOT));
     store.deleteNode("b");
     expect(rowsText(source.getRows())).not.toContain("0:b");
   });
 
   it("stops after dispose", () => {
     const { store } = createOutline(SOURCE);
-    const source = new OutlineRowsSource(store, ROOT);
+    const source = new OutlineRowsSource(store, new LocalRoot(ROOT));
     const first = source.getRows();
     source.dispose();
     store.deleteNode("b");
