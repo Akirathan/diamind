@@ -11,6 +11,7 @@ const fromStore = Annotation.define<boolean>();
 
 const theme = EditorView.theme({
   "&.cm-focused": { outline: "none" },
+  ".cm-scroller": { lineHeight: "inherit" },
   ".cm-content": { padding: "0" },
   ".cm-line": { padding: "0" },
 });

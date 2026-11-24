@@ -13,7 +13,7 @@ import {
   type OutlineSession,
 } from "@/renderer/src/outline-view/session";
 
-const ESTIMATED_ROW_HEIGHT = 28;
+const ESTIMATED_ROW_HEIGHT = 24;
 const OVERSCAN = 10;
 const INDENT_PX = 24;
 
@@ -97,10 +97,15 @@ const RowView = memo(function RowView({
       ref={measure}
       data-index={index}
       data-node-id={row.id}
-      className="flex items-start py-0.5"
+      className="flex items-start py-0.5 leading-5"
       style={{ paddingLeft: row.depth * INDENT_PX }}
     >
-      <span className="mt-[0.6lh] mr-2 size-1.5 shrink-0 rounded-full bg-neutral-500" />
+      <span className="mr-2 flex h-[1lh] shrink-0 items-center">
+        <span
+          data-testid="bullet"
+          className="size-1.5 rounded-full bg-neutral-500"
+        />
+      </span>
       <div ref={editorRef} className="min-w-0 flex-1" />
     </div>
   );

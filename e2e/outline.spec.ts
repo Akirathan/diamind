@@ -49,6 +49,30 @@ test("a large outline renders only a few editors", async () => {
   expect(await editorCount(window)).toBeLessThan(MAX_EDITORS);
 });
 
+test("bullets are centered on the first line of the text", async () => {
+  launched = await launchApp({ DIAMIND_SEED_NODES: "20" });
+  const window = await launched.app.firstWindow();
+  await window.setViewportSize({ width: 600, height: 800 });
+  const wrapped = window.locator('[data-node-id="seed-13"]');
+  await expect(wrapped).toBeVisible();
+  expect((await wrapped.boundingBox())?.height).toBeGreaterThan(40);
+
+  const offsets = await window.locator("[data-node-id]").evaluateAll((rows) =>
+    rows.map((row) => {
+      const bullet = row.querySelector('[data-testid="bullet"]') as Element;
+      const line = row.querySelector(".cm-line") as Element;
+      const bulletBox = bullet.getBoundingClientRect();
+      const lineHeight = parseFloat(getComputedStyle(line).lineHeight);
+      const textCenter = line.getBoundingClientRect().top + lineHeight / 2;
+      return bulletBox.top + bulletBox.height / 2 - textCenter;
+    }),
+  );
+  expect(offsets).toHaveLength(20);
+  for (const offset of offsets) {
+    expect(Math.abs(offset)).toBeLessThanOrEqual(1);
+  }
+});
+
 test("text typed into a node survives editor reuse", async () => {
   launched = await launchApp({ DIAMIND_SEED_NODES: String(SEED_NODES) });
   const window = await launched.app.firstWindow();
