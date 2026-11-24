@@ -58,11 +58,10 @@ describe("RootPlaceholder", () => {
   });
 
   it("stays when it has a child", () => {
-    const { store, zoom, history } = zoomed();
+    const { store, zoom } = zoomed();
     store.insertNode("n1", null, "bullet", { text: "x" });
     zoom.back();
     expect(dump(store)).toContain("~n1");
-    history.undo();
   });
 
   it("is removed on leave after its text was undone", async () => {

@@ -117,6 +117,11 @@ test("the title is editable", async () => {
   await zoomInto(page, "seed-2");
   await page.keyboard.type("!");
   await expect(title(page)).toHaveText("Node 2!");
+  const overflow = await title(page).evaluate((content) => {
+    const scroller = content.closest(".cm-scroller") as Element;
+    return scroller.scrollHeight - scroller.clientHeight;
+  });
+  expect(overflow).toBe(0);
   await button(page, "Back").click();
   await expect(row(page, "seed-2")).toHaveText("Node 2!");
 });
@@ -264,6 +269,22 @@ test("a restart restores the zoomed node and the history", async () => {
   await button(page, "Back").click();
   await expectOutline(page, ["a", "  b", "    c"]);
   await expect(title(page)).toHaveCount(0);
+});
+
+test("a restart restores the scroll position", async () => {
+  launched = await launchApp();
+  let page = await launched.app.firstWindow();
+  await page.locator(".cm-content").first().click();
+  for (let i = 0; i < 60; i++) {
+    await page.keyboard.type("x");
+    await page.keyboard.press("Enter");
+  }
+  // The rows follow the cursor for a few frames.
+  await page.waitForTimeout(300);
+  await scrollTo(page, 300);
+  await launched.restart();
+  page = await launched.app.firstWindow();
+  await expect.poll(() => scrollTop(page)).toBe(300);
 });
 
 test("a seeded session does not change the saved zoom", async () => {

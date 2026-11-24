@@ -47,7 +47,7 @@ export const OutlineRowView = memo(function OutlineRowView({
       data-index={index}
       data-node-id={id}
       data-title={isTitle}
-      className="relative flex items-start py-0.5 leading-5 data-[title=true]:py-2 data-[title=true]:text-2xl data-[title=true]:font-semibold"
+      className="relative flex items-start py-0.5 leading-5 data-[title=true]:py-2 data-[title=true]:text-2xl data-[title=true]:leading-8 data-[title=true]:font-semibold"
       style={{ marginTop: gapAbove, paddingLeft: depth * INDENT_PX }}
     >
       <IndentLines
