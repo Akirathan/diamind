@@ -1,5 +1,8 @@
+import type { Node, NodeUiState } from "@/shared/outline/node";
+
 export const IpcChannel = {
   GetAppInfo: "app:get-info",
+  LoadOutline: "outline:load",
 } as const;
 
 export interface AppInfo {
@@ -7,6 +10,37 @@ export interface AppInfo {
   dataDir: string;
 }
 
+/** JSON text of a `T`. */
+export type Json<T> = string & { readonly __json?: T };
+
+/** All rows of `nodes` and `node_ui_state`, read at startup. */
+export interface LoadedOutline {
+  nodes: Node[];
+  uiState: NodeUiState[];
+}
+
+/**
+ * `LoadedOutline` as JSON text: IPC and the context bridge copy a few large
+ * strings much faster than many objects. Nodes come in chunks to stay below
+ * the maximum string length of V8.
+ */
+export interface OutlineJson {
+  nodeChunks: Json<Node[]>[];
+  uiState: Json<NodeUiState[]>;
+}
+
+export function parseOutlineJson(json: OutlineJson): LoadedOutline {
+  const nodes: Node[] = [];
+  for (const chunk of json.nodeChunks) {
+    for (const node of JSON.parse(chunk) as Node[]) {
+      nodes.push(node);
+    }
+  }
+  return { nodes, uiState: JSON.parse(json.uiState) as NodeUiState[] };
+}
+
 export interface DiamindApi {
   getAppInfo(): Promise<AppInfo>;
+  /** Parse the result with `parseOutlineJson`. */
+  loadOutline(): Promise<OutlineJson>;
 }

@@ -1,8 +1,11 @@
 import { generateNKeysBetween } from "fractional-indexing";
-import type { Node } from "../../../shared/outline/node";
+import type { Node } from "@/shared/outline/node";
 import { expect } from "vitest";
-import { OutlineError, type OutlineErrorCode } from "./errors";
-import { OutlineStore } from "./store";
+import {
+  OutlineError,
+  type OutlineErrorCode,
+} from "@/renderer/src/outline/errors";
+import { OutlineStore } from "@/renderer/src/outline/store";
 
 export const ROOT = "root";
 export const CREATED_AT = 1000;

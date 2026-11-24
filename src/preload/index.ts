@@ -1,8 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IpcChannel, type DiamindApi } from "../shared/api";
+import { IpcChannel, type DiamindApi } from "@/shared/api";
 
 const api: DiamindApi = {
   getAppInfo: () => ipcRenderer.invoke(IpcChannel.GetAppInfo),
+  loadOutline: () => ipcRenderer.invoke(IpcChannel.LoadOutline),
 };
 
 contextBridge.exposeInMainWorld("diamind", api);

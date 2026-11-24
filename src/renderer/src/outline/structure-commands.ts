@@ -1,9 +1,9 @@
-import type { ChangeSet } from "../../../shared/outline/change-set";
-import type { Node, NodeFormat } from "../../../shared/outline/node";
-import { checkEmptyTail, isEmptyNode } from "./empty-rule";
-import { OutlineError } from "./errors";
-import { checkFormat } from "./field-commands";
-import type { OutlineModel } from "./model";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { Node, NodeFormat } from "@/shared/outline/node";
+import { checkEmptyTail, isEmptyNode } from "@/renderer/src/outline/empty-rule";
+import { OutlineError } from "@/renderer/src/outline/errors";
+import { checkFormat } from "@/renderer/src/outline/field-commands";
+import type { OutlineModel } from "@/renderer/src/outline/model";
 
 export interface NewNodeContent {
   text?: string;

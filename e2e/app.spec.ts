@@ -4,9 +4,10 @@ import {
   test,
   type ElectronApplication,
 } from "@playwright/test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseOutlineJson, type DiamindApi } from "@/shared/api";
 
 let app: ElectronApplication;
 let dataDir: string;
@@ -44,4 +45,13 @@ test("renderer has no Node.js access", async () => {
   const window = await app.firstWindow();
   expect(await window.evaluate(() => typeof require)).toBe("undefined");
   expect(await window.evaluate(() => typeof process)).toBe("undefined");
+});
+
+test("creates the database and loads an empty outline", async () => {
+  const page = await app.firstWindow();
+  const outline = await page.evaluate(() =>
+    (window as unknown as { diamind: DiamindApi }).diamind.loadOutline(),
+  );
+  expect(parseOutlineJson(outline)).toEqual({ nodes: [], uiState: [] });
+  expect(existsSync(join(dataDir, "diamind.db"))).toBe(true);
 });

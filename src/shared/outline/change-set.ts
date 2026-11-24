@@ -1,4 +1,4 @@
-import type { Node, NodeUiState } from "./node";
+import type { Node, NodeUiState } from "@/shared/outline/node";
 
 /**
  * Changed rows of one table.

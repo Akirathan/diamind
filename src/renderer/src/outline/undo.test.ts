@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { ChangeSet } from "../../../shared/outline/change-set";
-import type { OutlineEvent, OutlineStore } from "./store";
-import { createOutline, dump, outline, snapshot, ROOT } from "./test-outline";
-import { MAX_UNDO_STEPS, MERGE_PAUSE_MS, UndoHistory } from "./undo";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { OutlineEvent, OutlineStore } from "@/renderer/src/outline/store";
+import {
+  createOutline,
+  dump,
+  outline,
+  snapshot,
+  ROOT,
+} from "@/renderer/src/outline/test-outline";
+import {
+  MAX_UNDO_STEPS,
+  MERGE_PAUSE_MS,
+  UndoHistory,
+} from "@/renderer/src/outline/undo";
 
 function setup(source: string) {
   const { store, clock } = createOutline(source);

@@ -1,6 +1,6 @@
-import type { ChangeSet } from "../../../shared/outline/change-set";
-import type { Node, NodeUiState } from "../../../shared/outline/node";
-import type { OutlineModel } from "./model";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { Node, NodeUiState } from "@/shared/outline/node";
+import type { OutlineModel } from "@/renderer/src/outline/model";
 
 export interface RestoreRows {
   nodes: { put: readonly Node[]; remove: readonly string[] };

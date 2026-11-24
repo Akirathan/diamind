@@ -1,9 +1,10 @@
+import type { ChangeSet, TableChanges } from "@/shared/outline/change-set";
+import type { Node, NodeUiState } from "@/shared/outline/node";
 import type {
-  ChangeSet,
-  TableChanges,
-} from "../../../shared/outline/change-set";
-import type { Node, NodeUiState } from "../../../shared/outline/node";
-import type { OutlineEvent, OutlineStore, RestoreRows } from "./store";
+  OutlineEvent,
+  OutlineStore,
+  RestoreRows,
+} from "@/renderer/src/outline/store";
 
 /** Consecutive edits of the same text or note merge until a pause this long. */
 export const MERGE_PAUSE_MS = 1000;

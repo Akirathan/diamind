@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { AppInfo } from "../../shared/api";
+import type { AppInfo } from "@/shared/api";
 
 export function App() {
   const [info, setInfo] = useState<AppInfo | null>(null);

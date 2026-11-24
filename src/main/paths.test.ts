@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDataDir } from "./paths";
+import { resolveDataDir } from "@/main/paths";
 
 describe("resolveDataDir", () => {
   it("defaults to ~/.local/share/diamind", () => {

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { JsonValue, Node, NodeFormat } from "../../../shared/outline/node";
-import { OutlineStore } from "./store";
+import type { JsonValue, Node, NodeFormat } from "@/shared/outline/node";
+import { OutlineStore } from "@/renderer/src/outline/store";
 import {
   CREATED_AT,
   ROOT,
   createOutline,
   expectRejected,
   testNode,
-} from "./test-outline";
+} from "@/renderer/src/outline/test-outline";
 
 const node = (store: OutlineStore, id: string) => store.getNode(id) as Node;
 

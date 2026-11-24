@@ -1,5 +1,5 @@
-import type { Node } from "../../../shared/outline/node";
-import { OutlineError } from "./errors";
+import type { Node } from "@/shared/outline/node";
+import { OutlineError } from "@/renderer/src/outline/errors";
 
 /** Attachment and divider nodes always show something, so they are never empty. */
 export function isEmptyNode(node: Node): boolean {
