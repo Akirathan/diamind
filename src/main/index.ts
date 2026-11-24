@@ -1,10 +1,11 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { IpcChannel, type AppInfo } from "@/shared/api";
 import { openDatabase, type Db } from "@/main/db/database";
 import { loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
+import { openLink } from "@/main/open-link";
 import { resolveDataDir } from "@/main/paths";
 
 const dataDir = resolveDataDir();
@@ -66,6 +67,9 @@ function registerIpc(db: Db): void {
     devSeedNodeCount: resolveSeedNodeCount(process.env, app.isPackaged),
   }));
   ipcMain.handle(IpcChannel.LoadOutline, () => loadOutline(db));
+  ipcMain.handle(IpcChannel.OpenLink, (_event, url: unknown) =>
+    openLink(url, shell),
+  );
 }
 
 if (!app.requestSingleInstanceLock()) {
