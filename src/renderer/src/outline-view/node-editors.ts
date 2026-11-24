@@ -16,6 +16,9 @@ const theme = EditorView.theme({
   ".cm-scroller": { lineHeight: "inherit" },
   ".cm-content": { padding: "0" },
   ".cm-line": { padding: "0" },
+  "@media (prefers-color-scheme: dark)": {
+    ".cm-content": { caretColor: "white" },
+  },
 });
 
 /**

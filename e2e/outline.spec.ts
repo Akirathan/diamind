@@ -96,3 +96,18 @@ test("text typed into a node survives editor reuse", async () => {
     window.getByText("Node 1 edited", { exact: true }),
   ).toBeVisible();
 });
+
+for (const { colorScheme, caretColor } of [
+  { colorScheme: "light", caretColor: "rgb(0, 0, 0)" },
+  { colorScheme: "dark", caretColor: "rgb(255, 255, 255)" },
+] as const) {
+  test(`the cursor is visible in the ${colorScheme} theme`, async () => {
+    launched = await launchApp();
+    const window = await launched.app.firstWindow();
+    await window.emulateMedia({ colorScheme });
+    await expect(window.locator(".cm-content")).toHaveCSS(
+      "caret-color",
+      caretColor,
+    );
+  });
+}
