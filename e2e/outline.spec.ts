@@ -53,8 +53,8 @@ test("text typed into a node survives editor reuse", async () => {
   launched = await launchApp({ DIAMIND_SEED_NODES: String(SEED_NODES) });
   const window = await launched.app.firstWindow();
   const first = window.getByText("Node 1", { exact: true });
+  // The editor is as wide as the row, so the click lands behind the text.
   await first.click();
-  await window.keyboard.press("End");
   await window.keyboard.type(" edited");
   await expect(
     window.getByText("Node 1 edited", { exact: true }),

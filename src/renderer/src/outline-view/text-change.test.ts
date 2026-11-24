@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { textChange, type TextChange } from "./text-change";
+import {
+  textChange,
+  type TextChange,
+} from "@/renderer/src/outline-view/text-change";
 
 function apply(text: string, change: TextChange): string {
   return text.slice(0, change.from) + change.insert + text.slice(change.to);

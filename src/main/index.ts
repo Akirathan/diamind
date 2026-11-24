@@ -1,9 +1,11 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { IpcChannel, type AppInfo } from "../shared/api";
-import { resolveSeedNodeCount } from "./dev-options";
-import { resolveDataDir } from "./paths";
+import { IpcChannel, type AppInfo } from "@/shared/api";
+import { openDatabase, type Db } from "@/main/db/database";
+import { loadOutline } from "@/main/db/outline";
+import { resolveSeedNodeCount } from "@/main/dev-options";
+import { resolveDataDir } from "@/main/paths";
 
 const dataDir = resolveDataDir();
 mkdirSync(dataDir, { recursive: true });
@@ -48,12 +50,13 @@ function createWindow(): BrowserWindow {
   return window;
 }
 
-function registerIpc(): void {
+function registerIpc(db: Db): void {
   ipcMain.handle(IpcChannel.GetAppInfo, (): AppInfo => ({
     version: app.getVersion(),
     dataDir,
     devSeedNodeCount: resolveSeedNodeCount(process.env, app.isPackaged),
   }));
+  ipcMain.handle(IpcChannel.LoadOutline, () => loadOutline(db));
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -82,7 +85,14 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   void app.whenReady().then(() => {
-    registerIpc();
+    const db = openDatabase(
+      join(dataDir, "diamind.db"),
+      join(__dirname, "migrations"),
+    );
+    app.on("will-quit", () => {
+      db.$client.close();
+    });
+    registerIpc(db);
     mainWindow = createWindow();
   });
 }

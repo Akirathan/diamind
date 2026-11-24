@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ChangeSet } from "../../../shared/outline/change-set";
-import type { Node } from "../../../shared/outline/node";
-import { OutlineStore, type OutlineEvent } from "./store";
-import { ROOT, createOutline } from "./test-outline";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { Node } from "@/shared/outline/node";
+import { OutlineStore, type OutlineEvent } from "@/renderer/src/outline/store";
+import { ROOT, createOutline } from "@/renderer/src/outline/test-outline";
 
 function listen(store: OutlineStore) {
   const events: OutlineEvent[] = [];

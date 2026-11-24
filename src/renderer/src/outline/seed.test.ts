@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { flattenVisible } from "../outline-view/flatten";
-import { seedRows } from "./seed";
-import { OutlineStore } from "./store";
+import { flattenVisible } from "@/renderer/src/outline-view/flatten";
+import { seedRows } from "@/renderer/src/outline/seed";
+import { OutlineStore } from "@/renderer/src/outline/store";
 
 describe("seedRows", () => {
   it("builds a valid outline with the nodes in document order", () => {

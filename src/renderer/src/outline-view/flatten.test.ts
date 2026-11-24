@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createOutline, ROOT } from "../outline/test-outline";
-import { changesRows, flattenVisible, OutlineRowsSource } from "./flatten";
+import { createOutline, ROOT } from "@/renderer/src/outline/test-outline";
+import {
+  changesRows,
+  flattenVisible,
+  OutlineRowsSource,
+} from "@/renderer/src/outline-view/flatten";
 
 const SOURCE = `
   a

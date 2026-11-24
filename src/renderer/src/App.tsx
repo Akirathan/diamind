@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { OutlineView } from "./outline-view/OutlineView";
+import { OutlineView } from "@/renderer/src/outline-view/OutlineView";
 import {
   createOutlineSession,
   type OutlineSession,
-} from "./outline-view/session";
+} from "@/renderer/src/outline-view/session";
 
 export function App() {
   const [session, setSession] = useState<OutlineSession | null>(null);

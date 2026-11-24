@@ -1,5 +1,5 @@
-import type { ChangeSet } from "../../../shared/outline/change-set";
-import type { OutlineStore } from "../outline/store";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { OutlineStore } from "@/renderer/src/outline/store";
 
 export interface OutlineRow {
   readonly id: string;

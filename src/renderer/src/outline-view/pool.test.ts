@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Pool } from "./pool";
+import { Pool } from "@/renderer/src/outline-view/pool";
 
 function counterPool(maxFree: number) {
   let next = 0;

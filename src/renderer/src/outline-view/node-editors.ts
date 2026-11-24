@@ -1,8 +1,8 @@
 import { Annotation, EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import type { OutlineStore } from "../outline/store";
-import { Pool } from "./pool";
-import { textChange } from "./text-change";
+import type { OutlineStore } from "@/renderer/src/outline/store";
+import { Pool } from "@/renderer/src/outline-view/pool";
+import { textChange } from "@/renderer/src/outline-view/text-change";
 
 const MAX_FREE_EDITORS = 50;
 

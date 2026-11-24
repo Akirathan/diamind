@@ -6,9 +6,12 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import type { OutlineRow } from "./flatten";
-import type { NodeEditors } from "./node-editors";
-import { ensureVisibleNode, type OutlineSession } from "./session";
+import type { OutlineRow } from "@/renderer/src/outline-view/flatten";
+import type { NodeEditors } from "@/renderer/src/outline-view/node-editors";
+import {
+  ensureVisibleNode,
+  type OutlineSession,
+} from "@/renderer/src/outline-view/session";
 
 const ESTIMATED_ROW_HEIGHT = 28;
 const OVERSCAN = 10;

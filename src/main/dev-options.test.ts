@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSeedNodeCount } from "./dev-options";
+import { resolveSeedNodeCount } from "@/main/dev-options";
 
 describe("resolveSeedNodeCount", () => {
   it("is 0 without DIAMIND_SEED_NODES", () => {

@@ -1,17 +1,20 @@
-import {
-  isEmptyChangeSet,
-  type ChangeSet,
-} from "../../../shared/outline/change-set";
+import { isEmptyChangeSet, type ChangeSet } from "@/shared/outline/change-set";
 import type {
   JsonValue,
   Node,
   NodeFormat,
   NodeUiState,
-} from "../../../shared/outline/node";
-import * as fields from "./field-commands";
-import { loadModel, type OutlineRows } from "./load";
-import type { OutlineModel, OutlineOptions } from "./model";
-import * as structure from "./structure-commands";
+} from "@/shared/outline/node";
+import * as fields from "@/renderer/src/outline/field-commands";
+import { restoreRows, type RestoreRows } from "@/renderer/src/outline/restore";
+import { loadModel, type OutlineRows } from "@/renderer/src/outline/load";
+import type {
+  OutlineModel,
+  OutlineOptions,
+} from "@/renderer/src/outline/model";
+import * as structure from "@/renderer/src/outline/structure-commands";
+
+export type { RestoreRows } from "@/renderer/src/outline/restore";
 
 export interface OutlineEvent {
   /** Changed and deleted nodes, plus the parents whose children changed. */
@@ -126,6 +129,14 @@ export class OutlineStore {
 
   removeAttribute(id: string, key: string): ChangeSet {
     return this.run(() => fields.removeAttribute(this.model, id, key));
+  }
+
+  /**
+   * Puts and removes raw rows without validation, for undo and redo.
+   * The rows must form a valid outline afterwards.
+   */
+  restoreRows(rows: RestoreRows): ChangeSet {
+    return this.run(() => restoreRows(this.model, rows));
   }
 
   private run(command: () => ChangeSet): ChangeSet {

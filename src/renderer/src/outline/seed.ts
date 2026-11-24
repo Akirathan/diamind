@@ -1,5 +1,5 @@
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
-import type { Node } from "../../../shared/outline/node";
+import type { Node } from "@/shared/outline/node";
 
 const DEPTH_PATTERN = [0, 1, 2, 2, 1];
 const LONG_TEXT_EVERY = 13;

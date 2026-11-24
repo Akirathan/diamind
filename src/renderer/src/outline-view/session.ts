@@ -1,7 +1,7 @@
-import { seedRows } from "../outline/seed";
-import { OutlineStore } from "../outline/store";
-import { OutlineRowsSource } from "./flatten";
-import { NodeEditors } from "./node-editors";
+import { seedRows } from "@/renderer/src/outline/seed";
+import { OutlineStore } from "@/renderer/src/outline/store";
+import { OutlineRowsSource } from "@/renderer/src/outline-view/flatten";
+import { NodeEditors } from "@/renderer/src/outline-view/node-editors";
 
 /** The store and the view state built on it. Lives as long as the window. */
 export interface OutlineSession {

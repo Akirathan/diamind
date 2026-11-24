@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
-import type { DiamindApi } from "../src/shared/api";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { parseOutlineJson, type DiamindApi } from "@/shared/api";
 import { launchApp, type LaunchedApp } from "./launch";
 
 let launched: LaunchedApp;
@@ -32,4 +34,13 @@ test("renderer has no Node.js access", async () => {
   const window = await launched.app.firstWindow();
   expect(await window.evaluate(() => typeof require)).toBe("undefined");
   expect(await window.evaluate(() => typeof process)).toBe("undefined");
+});
+
+test("creates the database and loads an empty outline", async () => {
+  const page = await launched.app.firstWindow();
+  const outline = await page.evaluate(() =>
+    (window as unknown as { diamind: DiamindApi }).diamind.loadOutline(),
+  );
+  expect(parseOutlineJson(outline)).toEqual({ nodes: [], uiState: [] });
+  expect(existsSync(join(launched.dataDir, "diamind.db"))).toBe(true);
 });
