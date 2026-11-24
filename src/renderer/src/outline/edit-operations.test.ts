@@ -140,20 +140,42 @@ describe("enter at the end of the text", () => {
     expect(store.getChildren(ROOT)).toEqual(["a", "n1"]);
   });
 
-  it("is rejected if the new sibling and the last sibling would be empty", () => {
-    const { expectRejectedEdit } = setup(`
+  it("goes to the next sibling if it is empty and the last one", () => {
+    const { store, run } = setup(`
       a
       ~b
     `);
-    expectRejectedEdit(enterAt("a", 1));
+    expect(run(enterAt("a", 1))).toEqual(cursorAt("b", 0));
+    expect(dump(store)).toBe("a\n~b");
   });
 
-  it("is rejected if the new child and the last child would be empty", () => {
-    const { expectRejectedEdit } = setup(`
+  it("goes to the only child if it is empty", () => {
+    const { store, run } = setup(`
       a
         ~b
     `);
-    expectRejectedEdit(enterAt("a", 1));
+    expect(run(enterAt("a", 1))).toEqual(cursorAt("b", 0));
+    expect(dump(store)).toBe("a\n  ~b");
+  });
+
+  it("creates a sibling before an empty one that is not the last", () => {
+    const { store, run } = setup(`
+      a
+      ~b
+      c
+    `);
+    expect(run(enterAt("a", 1))).toEqual(cursorAt("n1", 0));
+    expect(store.getChildren(ROOT)).toEqual(["a", "n1", "b", "c"]);
+  });
+
+  it("creates a sibling before a last one that has only a note", () => {
+    const { store, run } = setup(`
+      a
+      ~b
+    `);
+    store.setNote("b", "note");
+    run(enterAt("a", 1));
+    expect(store.getChildren(ROOT)).toEqual(["a", "n1", "b"]);
   });
 });
 
@@ -263,12 +285,51 @@ describe("enter with selected text", () => {
     expect(dump(store)).toBe("a\n  ~bc");
   });
 
-  it("keeps the selected text if the new sibling is rejected", () => {
-    const { expectRejectedEdit } = setup(`
+  it("deletes the selected end and goes to the empty last sibling", () => {
+    const { store, run, node } = setup(`
       abc
       ~d
     `);
-    expectRejectedEdit(enterAt("abc", 1, 3));
+    expect(run(enterAt("abc", 1, 3))).toEqual(cursorAt("d", 0));
+    expect(node("abc").text).toBe("a");
+    expect(store.getChildren(ROOT)).toEqual(["abc", "d"]);
+  });
+});
+
+describe("the format of a new node", () => {
+  const cases: [string, string, number, string][] = [
+    ["at the end", "abc", 3, "abc"],
+    ["at the beginning", "abc", 0, "abc"],
+    ["in the middle", "abc", 1, "abc"],
+    ["in an empty node", "", 0, "abc"],
+  ];
+
+  for (const [name, text, offset, id] of cases) {
+    it(`continues a paragraph, but not a heading, ${name}`, () => {
+      for (const format of ["paragraph", "h1"] as const) {
+        const { store, run, node } = setup(`
+          abc
+          d
+        `);
+        store.setFormat(id, format);
+        store.setText(id, text);
+        run(enterAt(id, offset));
+        expect(node("n1").format).toBe(
+          format === "paragraph" ? "paragraph" : "bullet",
+        );
+        expect(node(id).format).toBe(format);
+      }
+    });
+  }
+
+  it("continues a paragraph in its new first child", () => {
+    const { store, run, node } = setup(`
+      a
+        b
+    `);
+    store.setFormat("a", "paragraph");
+    run(enterAt("a", 1));
+    expect(node("n1")).toMatchObject({ parentId: "a", format: "paragraph" });
   });
 });
 
@@ -630,6 +691,13 @@ describe("pasteLines", () => {
     expect(node("abcd").text).toBe("ax");
     expect(node("n1").text).toBe("y");
     expect(node("n2").text).toBe("zzd");
+  });
+
+  it("continues a paragraph", () => {
+    const { store, run, node } = setup("a");
+    store.setFormat("a", "paragraph");
+    run(paste("a", 1, 1, ["x", "y"]));
+    expect(node("n1").format).toBe("paragraph");
   });
 
   it("inserts a single line into the text", () => {

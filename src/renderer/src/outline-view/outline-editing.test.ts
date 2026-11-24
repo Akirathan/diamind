@@ -47,16 +47,20 @@ describe("edits", () => {
 
   it("change nothing and keep the cursor if the store rejects them", () => {
     const { store, editing, history, focus, putCursor } = setup(`
-      abc
-      ~d
+      a
+        ~a1
+      b
+        ~b1
     `);
+    store.setCollapsed("a", true);
+    history.clear();
     const before = snapshot(store);
-    const cursor = { nodeId: "abc", anchor: 1, head: 3 };
+    const cursor = cursorAt("a", 0);
     putCursor(cursor);
-    editing.enter("abc", 1, 3);
     editing.indent(cursor);
     editing.unindent(cursor);
-    editing.mergeIntoUpper("abc");
+    editing.mergeIntoUpper("a");
+    editing.mergeIntoUpper("b");
     expect(snapshot(store)).toEqual(before);
     expect(history.canUndo).toBe(false);
     expect(focus.cursor).toEqual(cursor);

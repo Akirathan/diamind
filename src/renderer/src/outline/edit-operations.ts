@@ -1,4 +1,4 @@
-import type { Node } from "@/shared/outline/node";
+import type { Node, NodeFormat } from "@/shared/outline/node";
 import { cursorAt, type NodeCursor } from "@/renderer/src/outline/cursor";
 import { isEmptyNode } from "@/renderer/src/outline/empty-rule";
 import { OutlineError } from "@/renderer/src/outline/errors";
@@ -40,23 +40,50 @@ export function enter(
     return enterInEmptyNode(store, rootId, node);
   }
   const parentId = node.parentId as string;
+  const format = continuedFormat(node);
   if (after === "") {
-    const { id: newId } = isExpanded(store, id)
-      ? store.insertNode(id, null)
-      : store.insertNode(parentId, id);
-    return cursorAt(newId, 0);
+    return isExpanded(store, id)
+      ? insertEmpty(store, id, null, format)
+      : insertEmpty(store, parentId, id, format);
   }
   if (before === "") {
     const siblings = store.getChildren(parentId);
     const index = siblings.indexOf(id);
-    store.insertNode(parentId, index === 0 ? null : siblings[index - 1]);
+    const aboveId = index === 0 ? null : siblings[index - 1];
+    store.insertNode(parentId, aboveId, format);
     return cursorAt(id, 0);
   }
   store.setText(id, before);
-  const { id: newId } = store.insertNode(parentId, id, "bullet", {
+  const { id: newId } = store.insertNode(parentId, id, format, {
     text: after,
   });
   return cursorAt(newId, 0);
+}
+
+/** The format of a node that is created by an edit of `node`. */
+function continuedFormat(node: Node): NodeFormat {
+  return node.format === "paragraph" ? "paragraph" : "bullet";
+}
+
+/**
+ * Inserts an empty node, or goes to the empty last child that would follow it:
+ * the last two children cannot both be empty.
+ */
+function insertEmpty(
+  store: OutlineStore,
+  parentId: string,
+  afterId: string | null,
+  format: NodeFormat,
+): NodeCursor {
+  const siblings = store.getChildren(parentId);
+  const nextIndex = afterId === null ? 0 : siblings.indexOf(afterId) + 1;
+  if (nextIndex === siblings.length - 1) {
+    const nextId = siblings[nextIndex];
+    if (isEmptyNode(getNode(store, nextId))) {
+      return cursorAt(nextId, 0);
+    }
+  }
+  return cursorAt(store.insertNode(parentId, afterId, format).id, 0);
 }
 
 function enterInEmptyNode(
@@ -66,7 +93,8 @@ function enterInEmptyNode(
 ): NodeCursor | null {
   const parentId = node.parentId as string;
   if (store.getChildren(parentId).at(-1) !== node.id) {
-    return cursorAt(store.insertNode(parentId, node.id).id, 0);
+    const { id } = store.insertNode(parentId, node.id, continuedFormat(node));
+    return cursorAt(id, 0);
   }
   if (parentId === rootId) {
     return null;
@@ -167,21 +195,12 @@ export function pasteLines(
   }
   store.setText(id, before + first);
   const parentId = node.parentId as string;
+  const format = continuedFormat(node);
   let previousId = id;
-  for (const line of rest) {
-    previousId = insertBelow(store, parentId, previousId, line);
+  for (const text of [...rest, lastLine + after]) {
+    previousId = store.insertNode(parentId, previousId, format, { text }).id;
   }
-  const lastId = insertBelow(store, parentId, previousId, lastLine + after);
-  return cursorAt(lastId, lastLine.length);
-}
-
-function insertBelow(
-  store: OutlineStore,
-  parentId: string,
-  afterId: string,
-  text: string,
-): string {
-  return store.insertNode(parentId, afterId, "bullet", { text }).id;
+  return cursorAt(previousId, lastLine.length);
 }
 
 function getNode(store: OutlineStore, id: string): Node {
