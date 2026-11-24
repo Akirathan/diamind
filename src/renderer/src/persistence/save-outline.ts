@@ -1,6 +1,7 @@
 import type { DiamindApi } from "@/shared/api";
 import type { ChangeSet } from "@/shared/outline/change-set";
 import type { OutlineStore } from "@/renderer/src/outline/store/store";
+import type { AppStateStore } from "@/renderer/src/persistence/app-state";
 import {
   WriteQueue,
   type WriteQueueOptions,
@@ -9,11 +10,12 @@ import {
 export type SaveApi = Pick<DiamindApi, "saveChanges" | "onFlushRequest">;
 
 /**
- * Saves `unsaved` and every later change of the store.
+ * Saves `unsaved` and every later change of the store and the app state.
  * Returns a function that saves the rest and stops.
  */
 export function saveOutline(
   store: OutlineStore,
+  appState: AppStateStore,
   unsaved: ChangeSet,
   api: SaveApi,
   windowEvents: EventTarget = window,
@@ -30,6 +32,9 @@ export function saveOutline(
   }
 
   const unsubscribe = store.subscribe((event) => queue.add(event.changes));
+  const unsubscribeAppState = appState.subscribe((changed) =>
+    queue.addAppState(changed),
+  );
   const removeFlushRequest = api.onFlushRequest(() => queue.flush());
   windowEvents.addEventListener("blur", flush);
   // A reload of the page does not request a flush.
@@ -37,6 +42,7 @@ export function saveOutline(
 
   return () => {
     unsubscribe();
+    unsubscribeAppState();
     removeFlushRequest();
     windowEvents.removeEventListener("blur", flush);
     windowEvents.removeEventListener("pagehide", flush);

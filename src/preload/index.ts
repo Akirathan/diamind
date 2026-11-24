@@ -11,6 +11,7 @@ ipcRenderer.on(IpcChannel.FlushRequest, async () => {
 const api: DiamindApi = {
   getAppInfo: () => ipcRenderer.invoke(IpcChannel.GetAppInfo),
   loadOutline: () => ipcRenderer.invoke(IpcChannel.LoadOutline),
+  loadAppState: () => ipcRenderer.invoke(IpcChannel.LoadAppState),
   saveChanges: (batch) => ipcRenderer.invoke(IpcChannel.SaveChanges, batch),
   onFlushRequest: (flush) => {
     flushChanges = flush;

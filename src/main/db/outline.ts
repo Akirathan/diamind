@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { OutlineJson } from "@/shared/api";
 import type { ChangeBatch } from "@/shared/outline/change-set";
+import { writeAppState } from "@/main/db/app-state";
 import type { Db } from "@/main/db/database";
 import { nodeToRow, uiStateToRow } from "@/main/db/mapping";
 import { nodes, nodeUiState } from "@/main/db/schema";
@@ -33,7 +34,7 @@ function toJsonArray(rows: readonly string[]): string {
   return `[${rows.join(",")}]`;
 }
 
-/** Writes the changed rows in one transaction. */
+/** Writes the changed rows of all tables in one transaction. */
 export function applyChangeSet(db: Db, changes: ChangeBatch): void {
   db.transaction((tx) => {
     for (const ids of chunks(changes.nodes.delete)) {
@@ -60,6 +61,7 @@ export function applyChangeSet(db: Db, changes: ChangeBatch): void {
     for (const state of changes.uiState.upsert) {
       upsertUiState.run(uiStateToRow(state));
     }
+    writeAppState(tx, changes.appState ?? {});
   });
 }
 

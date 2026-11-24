@@ -10,10 +10,11 @@ import {
   snapshot,
 } from "@/renderer/src/outline/fixtures/test-outline";
 import { OutlineEditing } from "@/renderer/src/outline-view/editing/outline-editing";
+import { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 function setup(source: string) {
   const { store } = createOutline(source);
-  const editing = new OutlineEditing(store, ROOT);
+  const editing = new OutlineEditing(store, new LocalRoot(ROOT));
   const { history, focus } = editing;
 
   function putCursor(cursor: NodeCursor): void {

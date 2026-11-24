@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { AppStateValues } from "@/shared/app-state";
 import { emptyChangeSet, type ChangeBatch } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
 import { OutlineStore } from "@/renderer/src/outline/store/store";
@@ -7,6 +8,7 @@ import {
   snapshot,
 } from "@/renderer/src/outline/fixtures/test-outline";
 import { UndoHistory } from "@/renderer/src/outline/history/undo";
+import { AppStateStore } from "@/renderer/src/persistence/app-state";
 import { FakeTimer } from "@/renderer/src/persistence/fake-timer";
 import {
   saveOutline,
@@ -18,6 +20,7 @@ import { FLUSH_DELAY_MS } from "@/renderer/src/persistence/write-queue";
 class FakeDatabase implements SaveApi {
   readonly nodes = new Map<string, Node>();
   readonly uiState = new Map<string, NodeUiState>();
+  appState: AppStateValues = {};
   saveCount = 0;
   requestFlush: (() => Promise<void>) | null = null;
 
@@ -30,6 +33,7 @@ class FakeDatabase implements SaveApi {
     batch.uiState.upsert.forEach((state) =>
       this.uiState.set(state.nodeId, state),
     );
+    this.appState = { ...this.appState, ...batch.appState };
   }
 
   onFlushRequest(flush: () => Promise<void>): () => void {
@@ -50,16 +54,20 @@ class FakeDatabase implements SaveApi {
 let db: FakeDatabase;
 let timer: FakeTimer;
 let windowEvents: EventTarget;
+let appState: AppStateStore;
 
 beforeEach(() => {
   db = new FakeDatabase();
   timer = new FakeTimer();
   windowEvents = new EventTarget();
+  appState = new AppStateStore({});
 });
 
 function startEmpty(): { store: OutlineStore; stop: () => void } {
   const { store, changes } = OutlineStore.load({ nodes: [] });
-  const stop = saveOutline(store, changes, db, windowEvents, { timer });
+  const stop = saveOutline(store, appState, changes, db, windowEvents, {
+    timer,
+  });
   return { store, stop };
 }
 
@@ -102,7 +110,9 @@ describe("saveOutline", () => {
       a
         b
     `);
-    saveOutline(store, emptyChangeSet(), db, windowEvents, { timer });
+    saveOutline(store, appState, emptyChangeSet(), db, windowEvents, {
+      timer,
+    });
     windowEvents.dispatchEvent(new Event("blur"));
     await timer.advance(FLUSH_DELAY_MS);
     expect(db.saveCount).toBe(0);
@@ -114,6 +124,19 @@ describe("saveOutline", () => {
     expect(db.load().rootId).toBe(store.rootId);
     await timer.advance(FLUSH_DELAY_MS);
     expect(db.saveCount).toBe(1);
+  });
+
+  it("saves the app state after the delay and on a flush request", async () => {
+    startEmpty();
+    await timer.advance(FLUSH_DELAY_MS);
+    appState.set("zoomedNodeId", "a");
+    expect(db.appState).toEqual({});
+    await timer.advance(FLUSH_DELAY_MS);
+    expect(db.appState).toEqual({ zoomedNodeId: "a" });
+
+    appState.set("zoomedNodeId", "b");
+    await db.requestFlush?.();
+    expect(db.appState).toEqual({ zoomedNodeId: "b" });
   });
 
   it("answers a flush request after the save", async () => {
@@ -128,8 +151,10 @@ describe("saveOutline", () => {
     expect(db.saveCount).toBe(1);
     expect(db.requestFlush).toBeNull();
     store.insertNode(store.rootId, null);
+    appState.set("zoomedNodeId", "a");
     windowEvents.dispatchEvent(new Event("blur"));
     await timer.advance(FLUSH_DELAY_MS);
     expect(db.nodes.size).toBe(1);
+    expect(db.appState).toEqual({});
   });
 });

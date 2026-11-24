@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { OutlineView } from "@/renderer/src/outline-view/OutlineView";
+import { TopBar } from "@/renderer/src/top-bar/TopBar";
 import {
   createOutlineSession,
   loadStartupOutline,
@@ -35,8 +36,15 @@ export function App() {
   }, []);
 
   return (
-    <main className="h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">
-      {session !== null && <OutlineView session={session} />}
+    <main className="flex h-screen flex-col bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">
+      {session !== null && (
+        <>
+          <TopBar zoom={session.zoom} />
+          <div className="min-h-0 flex-1">
+            <OutlineView session={session} />
+          </div>
+        </>
+      )}
       {loadError !== null && (
         <p role="alert" className="p-6 text-red-700 dark:text-red-400">
           The outline could not be loaded. {loadError}

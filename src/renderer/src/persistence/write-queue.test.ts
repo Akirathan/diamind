@@ -302,6 +302,22 @@ describe("failed save", () => {
     expect(nodeChanges(saves[1]).sort()).toEqual(["+b=old", "+c=new", "-a"]);
   });
 
+  it("keeps the newer app state", async () => {
+    queue.addAppState({
+      zoomedNodeId: "a",
+      navigationHistory: { entries: ["a"], index: 0 },
+    });
+    await timer.advance(FLUSH_DELAY_MS);
+    queue.addAppState({ zoomedNodeId: "b" });
+    await finish(saves[0], new Error("disk full"));
+
+    await timer.advance(RETRY_DELAY_MS);
+    expect(saves[1].batch.appState).toEqual({
+      zoomedNodeId: "b",
+      navigationHistory: { entries: ["a"], index: 0 },
+    });
+  });
+
   it("retries together with the next change", async () => {
     queue.add(upsert("a"));
     await timer.advance(FLUSH_DELAY_MS);

@@ -1,13 +1,18 @@
 import type { NodeCursor } from "@/renderer/src/outline/editing/cursor";
 import type { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
 
+export interface FocusRequest extends NodeCursor {
+  /** True if the cursor is not scrolled into view. */
+  readonly keepScroll?: boolean;
+}
+
 /**
  * Knows the cursor in the current node, and takes requests to move it.
  * The outline view fulfills a request, because the row may have to be rendered first.
  */
 export class NodeFocus {
   private lastCursor: NodeCursor | null = null;
-  private lastRequest: NodeCursor | null = null;
+  private lastRequest: FocusRequest | null = null;
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly currentNode: CurrentNode) {}
@@ -24,18 +29,18 @@ export class NodeFocus {
   }
 
   /** Focuses the node and scrolls the cursor into view. Offsets behind the text are clamped. */
-  request(cursor: NodeCursor): void {
+  request(cursor: NodeCursor, options?: { keepScroll: boolean }): void {
     // Before the current node, so that its subscribers see the new cursor.
     this.lastCursor = cursor;
     this.currentNode.set(cursor.nodeId);
     // A copy, so that a repeated request of the same cursor is a new one.
-    this.lastRequest = { ...cursor };
+    this.lastRequest = { ...cursor, ...options };
     for (const listener of this.listeners) {
       listener();
     }
   }
 
-  readonly getRequest = (): NodeCursor | null => this.lastRequest;
+  readonly getRequest = (): FocusRequest | null => this.lastRequest;
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);

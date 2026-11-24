@@ -14,6 +14,7 @@ import {
 } from "@/renderer/src/outline/editing/visible-nodes";
 import { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
 import { NodeFocus } from "@/renderer/src/outline-view/focus/node-focus";
+import type { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 /** The editing keys. Each edit is one undo step and moves the cursor. */
 export class OutlineEditing {
@@ -22,8 +23,13 @@ export class OutlineEditing {
   readonly focus: NodeFocus;
   private readonly context: operations.EditContext;
 
-  constructor(store: OutlineStore, rootId: string) {
-    this.context = { store, rootId };
+  constructor(store: OutlineStore, localRoot: LocalRoot) {
+    this.context = {
+      store,
+      get rootId() {
+        return localRoot.get();
+      },
+    };
     this.history = new UndoHistory(store, {
       cursor: {
         get: () => this.focus.cursor,
@@ -31,7 +37,7 @@ export class OutlineEditing {
       },
     });
     // Follows the store after the history, which needs the cursor before the change.
-    this.currentNode = new CurrentNode(store);
+    this.currentNode = new CurrentNode(store, localRoot);
     this.focus = new NodeFocus(this.currentNode);
   }
 

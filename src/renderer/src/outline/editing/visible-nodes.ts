@@ -9,12 +9,23 @@ export function isExpanded(store: OutlineStore, id: string): boolean {
   return store.getChildren(id).length > 0 && !isCollapsed(store, id);
 }
 
-/** True if the node is below `rootId` and no node between them is collapsed. */
+/** The local root is visible as the title, but the global root has no title. */
+export function hasTitle(store: OutlineStore, rootId: string): boolean {
+  return rootId !== store.rootId;
+}
+
+/**
+ * True if the node is the title, or if it is below `rootId` and no node
+ * between them is collapsed.
+ */
 export function isVisible(
   store: OutlineStore,
   rootId: string,
   id: string,
 ): boolean {
+  if (id === rootId) {
+    return hasTitle(store, rootId);
+  }
   let parentId = store.getNode(id)?.parentId ?? null;
   while (parentId !== null) {
     if (parentId === rootId) {
@@ -41,7 +52,7 @@ export function previousVisible(
   const siblings = store.getChildren(parentId);
   const index = siblings.indexOf(id);
   if (index === 0) {
-    return parentId === rootId ? null : parentId;
+    return parentId !== rootId || hasTitle(store, rootId) ? parentId : null;
   }
   let current = siblings[index - 1];
   while (isExpanded(store, current)) {
@@ -57,8 +68,8 @@ export function nextVisible(
   rootId: string,
   id: string,
 ): string | null {
-  if (isExpanded(store, id)) {
-    return store.getChildren(id)[0];
+  if (id === rootId || isExpanded(store, id)) {
+    return store.getChildren(id)[0] ?? null;
   }
   let current = id;
   while (current !== rootId) {

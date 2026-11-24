@@ -57,7 +57,9 @@ test("only nodes with children have an arrow", async () => {
   for (const n of [1, 2, 6, 7, 11, 12]) {
     await expect(arrow(window, n)).toHaveAttribute("aria-expanded", "true");
   }
-  await expect(window.getByRole("button")).toHaveCount(6);
+  await expect(
+    window.getByRole("button", { name: "Show children" }),
+  ).toHaveCount(6);
 });
 
 test("the arrow collapses and expands the children", async () => {

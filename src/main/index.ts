@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { IpcChannel, type AppInfo, type Json } from "@/shared/api";
 import type { ChangeBatch } from "@/shared/outline/change-set";
+import { loadAppState } from "@/main/db/app-state";
 import { openDatabase, type Db } from "@/main/db/database";
 import { applyChangeSet, loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
@@ -76,6 +77,7 @@ function registerIpc(db: Db): void {
     withOutline.add(event.sender);
     return loadOutline(db);
   });
+  ipcMain.handle(IpcChannel.LoadAppState, () => loadAppState(db));
   ipcMain.handle(
     IpcChannel.SaveChanges,
     (_event, batch: Json<ChangeBatch>): void => {

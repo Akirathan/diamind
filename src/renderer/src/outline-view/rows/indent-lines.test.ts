@@ -10,6 +10,7 @@ import {
   indentLineSegments,
   levelOfOwner,
 } from "@/renderer/src/outline-view/rows/indent-lines";
+import { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
 const SOURCE = `
   a
@@ -22,7 +23,7 @@ const SOURCE = `
 
 function setup(rootId = ROOT) {
   const { store } = createOutline(SOURCE);
-  const rows = new OutlineRowsSource(store, rootId);
+  const rows = new OutlineRowsSource(store, new LocalRoot(rootId));
   const currentNode = new CurrentNode(store);
   const line = new CurrentIndentLine(store, currentNode, rows);
   let notified = 0;
