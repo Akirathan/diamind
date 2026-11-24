@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ChangeSet } from "@/shared/outline/change-set";
+import { cursorAt, type NodeCursor } from "@/renderer/src/outline/cursor";
+import { OutlineError } from "@/renderer/src/outline/errors";
 import type { OutlineEvent, OutlineStore } from "@/renderer/src/outline/store";
 import {
   createOutline,
@@ -295,18 +297,152 @@ describe("transaction", () => {
     expect(history.canUndo).toBe(false);
   });
 
-  it("keeps the commands that succeeded before a throw", () => {
+  it("undoes all commands if one throws", () => {
+    const { store, history } = setup(source);
+    store.setCollapsed("a", true);
+    history.clear();
+    const before = snapshot(store);
+    const size = store.size;
+    const row = store.getNode("b");
+    expect(() =>
+      history.transaction(() => {
+        store.setText("a", "x");
+        store.insertNode(ROOT, "a", "bullet", { text: "new" });
+        store.indent("d");
+        store.deleteNode("b");
+        store.setCollapsed("a", false);
+        store.indent("a");
+      }),
+    ).toThrow(OutlineError);
+    expect(snapshot(store)).toEqual(before);
+    expect(store.size).toBe(size);
+    expect(store.getNode("b")).toBe(row);
+    expect(history.canUndo).toBe(false);
+  });
+
+  it("undoes the commands if the callback throws another error", () => {
     const { store, history } = setup(source);
     expect(() =>
       history.transaction(() => {
         store.setText("a", "x");
+        throw new Error("boom");
+      }),
+    ).toThrow("boom");
+    expect(store.getNode("a")?.text).toBe("a");
+  });
+
+  it("keeps the undo and redo stacks of a failed transaction", () => {
+    const { store, history } = setup(source);
+    store.setText("a", "a1");
+    store.setText("d", "d1");
+    history.undo();
+    expect(() =>
+      history.transaction(() => {
+        store.setText("e", "x");
         store.indent("a");
       }),
     ).toThrow();
-    expect(store.getNode("a")?.text).toBe("x");
+    history.redo();
+    expect(store.getNode("d")?.text).toBe("d1");
+    expect(history.canRedo).toBe(false);
+    history.undo();
+    history.undo();
+    expect(history.canUndo).toBe(false);
+    expect(dump(store)).toBe(outline(source));
+  });
+
+  it("records the next commands after a failed transaction", () => {
+    const { store, history } = setup(source);
+    expect(() =>
+      history.transaction(() => {
+        store.indent("a");
+      }),
+    ).toThrow();
+    store.setText("a", "x");
     history.undo();
     expect(store.getNode("a")?.text).toBe("a");
+  });
+
+  it("notifies subscribers of the undone commands", () => {
+    const { store, history } = setup(source);
+    const saved = new Map([["a", "a"]]);
+    store.subscribe(({ changes }) => {
+      for (const node of changes.nodes.upsert) {
+        saved.set(node.id, node.text);
+      }
+      for (const id of changes.nodes.delete) {
+        saved.delete(id);
+      }
+    });
+    expect(() =>
+      history.transaction(() => {
+        store.setText("a", "x");
+        store.insertNode("a", null, "bullet", { text: "new" });
+        store.indent("a");
+      }),
+    ).toThrow();
+    expect([...saved]).toEqual([["a", "a"]]);
+  });
+
+  it("undoes the commands of a nested transaction with the outermost one", () => {
+    const { store, history } = setup(source);
+    expect(() =>
+      history.transaction(() => {
+        history.transaction(() => {
+          store.setText("a", "x");
+        });
+        store.indent("a");
+      }),
+    ).toThrow();
+    expect(dump(store)).toBe(outline(source));
+    expect(store.getNode("a")?.text).toBe("a");
     expect(history.canUndo).toBe(false);
+  });
+
+  it("undoes the outermost transaction if a nested one throws", () => {
+    const { store, history } = setup(source);
+    expect(() =>
+      history.transaction(() => {
+        store.setText("a", "x");
+        history.transaction(() => {
+          store.setText("d", "y");
+          store.indent("a");
+        });
+      }),
+    ).toThrow();
+    expect(store.getNode("a")?.text).toBe("a");
+    expect(store.getNode("d")?.text).toBe("d");
+  });
+
+  it("keeps the commands of a nested transaction whose error is caught", () => {
+    const { store, history } = setup(source);
+    history.transaction(() => {
+      store.setText("a", "x");
+      expect(() =>
+        history.transaction(() => {
+          store.setText("d", "y");
+          store.indent("a");
+        }),
+      ).toThrow();
+    });
+    expect(store.getNode("a")?.text).toBe("x");
+    expect(store.getNode("d")?.text).toBe("y");
+    history.undo();
+    expect(store.getNode("a")?.text).toBe("a");
+    expect(store.getNode("d")?.text).toBe("d");
+    expect(history.canUndo).toBe(false);
+  });
+
+  it("keeps the redo stack if the changes cancel out", () => {
+    const { store, history } = setup(source);
+    store.setText("a", "x");
+    history.undo();
+    history.transaction(() => {
+      const { id } = store.insertNode("a", null);
+      store.deleteNode(id);
+    });
+    history.redo();
+    expect(store.getNode("a")?.text).toBe("x");
   });
 
   it("does not allow undo or redo inside", () => {
@@ -509,5 +645,85 @@ describe("text merging", () => {
     store.setText("a", "a12");
     history.undo();
     expect(store.getNode("a")).toBe(original);
+  });
+});
+
+describe("untracked", () => {
+  it("records nothing and keeps the stacks", () => {
+    const { store, history } = setup(source);
+    store.setText("a", "x");
+    store.setText("d", "y");
+    history.undo();
+    const { id } = history.untracked(() => store.insertNode(ROOT, null));
+    expect(history.canRedo).toBe(true);
+    history.undo();
+    expect(store.getNode("a")?.text).toBe("a");
+    expect(store.getNode(id)).toBeDefined();
+    expect(history.canUndo).toBe(false);
+  });
+});
+
+describe("cursor", () => {
+  function setupCursor() {
+    const { store, clock } = createOutline(source);
+    const state: { cursor: NodeCursor | null; restored: unknown[] } = {
+      cursor: null,
+      restored: [],
+    };
+    const history = new UndoHistory(store, {
+      now: () => clock.now,
+      cursor: {
+        get: () => state.cursor,
+        restore: (cursor) => state.restored.push(cursor),
+      },
+    });
+    return { store, history, state };
+  }
+
+  it("restores the cursor before and after a transaction", () => {
+    const { store, history, state } = setupCursor();
+    state.cursor = cursorAt("a", 1);
+    history.transaction(() => {
+      store.setText("a", "x");
+      state.cursor = cursorAt("d", 0);
+      history.setCursorAfter(cursorAt("e", 1));
+    });
+    history.undo();
+    history.redo();
+    expect(state.restored).toEqual([cursorAt("a", 1), cursorAt("e", 1)]);
+  });
+
+  it("restores the cursor around merged edits", () => {
+    const { store, history, state } = setupCursor();
+    for (let i = 1; i <= 3; i++) {
+      state.cursor = cursorAt("a", i);
+      store.setText("a", `a${"x".repeat(i)}`);
+      history.setCursorAfter(cursorAt("a", i + 1));
+    }
+    history.undo();
+    history.redo();
+    expect(state.restored).toEqual([cursorAt("a", 1), cursorAt("a", 4)]);
+  });
+
+  it("falls back to the cursor before the step on redo", () => {
+    const { store, history, state } = setupCursor();
+    state.cursor = cursorAt("a", 1);
+    store.setFormat("d", "h1");
+    history.undo();
+    history.redo();
+    expect(state.restored).toEqual([cursorAt("a", 1), cursorAt("a", 1)]);
+  });
+
+  it("does not move on an empty undo or a failed transaction", () => {
+    const { store, history, state } = setupCursor();
+    history.undo();
+    history.redo();
+    expect(() =>
+      history.transaction(() => {
+        store.setText("a", "x");
+        store.indent("a");
+      }),
+    ).toThrow();
+    expect(state.restored).toEqual([]);
   });
 });
