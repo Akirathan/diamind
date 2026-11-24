@@ -8,10 +8,14 @@ import type { OutlineEvent, OutlineStore, RestoreRows } from "./store";
 /** Consecutive edits of the same text or note merge until a pause this long. */
 export const MERGE_PAUSE_MS = 1000;
 
+/** The oldest steps above this limit are dropped. */
+export const MAX_UNDO_STEPS = 1000;
+
 export interface UndoOptions {
   /** Epoch milliseconds. */
   now?: () => number;
   mergePauseMs?: number;
+  maxSteps?: number;
 }
 
 /** `undefined` means that the row does not exist. */
@@ -38,6 +42,7 @@ export class UndoHistory {
   private readonly redoStack: Step[] = [];
   private readonly now: () => number;
   private readonly mergePauseMs: number;
+  private readonly maxSteps: number;
   private readonly unsubscribe: () => void;
   private group: Step | null = null;
   private groupDepth = 0;
@@ -50,6 +55,7 @@ export class UndoHistory {
   ) {
     this.now = options.now ?? Date.now;
     this.mergePauseMs = options.mergePauseMs ?? MERGE_PAUSE_MS;
+    this.maxSteps = options.maxSteps ?? MAX_UNDO_STEPS;
     this.unsubscribe = store.subscribe((event) => this.record(event));
   }
 
@@ -152,6 +158,9 @@ export class UndoHistory {
       return;
     }
     this.undoStack.push(step);
+    if (this.undoStack.length > this.maxSteps) {
+      this.undoStack.shift();
+    }
     this.mergeOpen = step.mergeKey !== null;
   }
 

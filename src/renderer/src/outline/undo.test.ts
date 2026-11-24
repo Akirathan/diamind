@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ChangeSet } from "../../../shared/outline/change-set";
 import type { OutlineEvent, OutlineStore } from "./store";
 import { createOutline, dump, outline, snapshot, ROOT } from "./test-outline";
-import { MERGE_PAUSE_MS, UndoHistory } from "./undo";
+import { MAX_UNDO_STEPS, MERGE_PAUSE_MS, UndoHistory } from "./undo";
 
 function setup(source: string) {
   const { store, clock } = createOutline(source);
@@ -314,6 +314,62 @@ describe("transaction", () => {
     store.setText("a", "xy");
     history.undo();
     expect(store.getNode("a")?.text).toBe("x");
+  });
+});
+
+describe("step limit", () => {
+  function undoAll(history: UndoHistory): number {
+    let count = 0;
+    while (history.undo() !== null) {
+      count++;
+    }
+    return count;
+  }
+
+  it("drops the oldest steps above the default limit", () => {
+    const { store, history } = setup(source);
+    for (let i = 1; i <= MAX_UNDO_STEPS + 2; i++) {
+      store.setText("a", `a${i}`);
+      history.breakMerge();
+    }
+    expect(undoAll(history)).toBe(MAX_UNDO_STEPS);
+    expect(store.getNode("a")?.text).toBe("a2");
+  });
+
+  it("keeps all steps through undo and redo at the limit", () => {
+    const { store, clock } = createOutline(source);
+    const history = new UndoHistory(store, {
+      now: () => clock.now,
+      maxSteps: 2,
+    });
+    store.setFormat("a", "h1");
+    store.setFormat("a", "h2");
+    store.setFormat("a", "h3");
+    expect(undoAll(history)).toBe(2);
+    expect(store.getNode("a")?.format).toBe("h1");
+    history.redo();
+    history.redo();
+    expect(history.canRedo).toBe(false);
+    expect(store.getNode("a")?.format).toBe("h3");
+    expect(undoAll(history)).toBe(2);
+  });
+
+  it("counts merged edits and a transaction as one step each", () => {
+    const { store, clock } = createOutline(source);
+    const history = new UndoHistory(store, {
+      now: () => clock.now,
+      maxSteps: 2,
+    });
+    history.transaction(() => {
+      store.setFormat("a", "h1");
+      store.setFormat("d", "h1");
+    });
+    store.setText("a", "a1");
+    store.setText("a", "a12");
+    store.setText("a", "a123");
+    expect(undoAll(history)).toBe(2);
+    expect(dump(store)).toBe(outline(source));
+    expect(store.getNode("d")?.format).toBe("bullet");
   });
 });
 
