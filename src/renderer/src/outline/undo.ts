@@ -196,7 +196,8 @@ function addTable<Row>(
   idOf: (row: Row) => string,
 ): void {
   const before = new Map(changes.before.map((row) => [idOf(row), row]));
-  const add = (id: string, after: Row | undefined): void => {
+
+  function add(id: string, after: Row | undefined): void {
     const existing = target.get(id);
     const first = existing === undefined ? before.get(id) : existing.before;
     if (first === after) {
@@ -204,7 +205,8 @@ function addTable<Row>(
     } else {
       target.set(id, { before: first, after });
     }
-  };
+  }
+
   for (const row of changes.upsert) {
     add(idOf(row), row);
   }
