@@ -1,8 +1,12 @@
+import type { ChangeBatch } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
 
 export const IpcChannel = {
   GetAppInfo: "app:get-info",
   LoadOutline: "outline:load",
+  SaveChanges: "outline:save",
+  FlushRequest: "outline:flush-request",
+  FlushDone: "outline:flush-done",
 } as const;
 
 export interface AppInfo {
@@ -45,4 +49,11 @@ export interface DiamindApi {
   getAppInfo(): Promise<AppInfo>;
   /** Parse the result with `parseOutlineJson`. */
   loadOutline(): Promise<OutlineJson>;
+  /** Writes the batch in one transaction. Rejects if nothing was written. */
+  saveChanges(batch: Json<ChangeBatch>): Promise<void>;
+  /**
+   * Registers the function that saves all unsaved changes before the window
+   * closes. Returns a function that removes it.
+   */
+  onFlushRequest(flush: () => Promise<void>): () => void;
 }
