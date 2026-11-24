@@ -117,10 +117,10 @@ test("Enter in an empty last child unindents it until the top level", async () =
   ]);
 });
 
-test("Shift + Enter does not create a line break", async () => {
+test("Alt + Enter does not create a line break", async () => {
   const page = await launch(2);
   await putCursor(page, "seed-2", 2);
-  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.press("Alt+Enter");
   await page.keyboard.type("x");
   await expectCursor(page, "Nox|de 2");
   await expect(page.locator(".cm-line")).toHaveCount(2);
