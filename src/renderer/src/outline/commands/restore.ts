@@ -9,7 +9,8 @@ export interface RestoreRows {
 
 export function restoreRows(model: OutlineModel, rows: RestoreRows): ChangeSet {
   return model.record(() => {
-    for (const id of rows.nodes.remove) {
+    // Backwards, because many last siblings are faster to remove from the end.
+    for (const id of rows.nodes.remove.toReversed()) {
       if (model.nodes.has(id)) {
         model.removeNode(id);
       }

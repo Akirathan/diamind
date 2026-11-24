@@ -75,7 +75,9 @@ export class OutlineModel {
   subtreeIds(id: string): string[] {
     const result = [id];
     for (let i = 0; i < result.length; i++) {
-      result.push(...this.childIds(result[i]));
+      for (const childId of this.childIds(result[i])) {
+        result.push(childId);
+      }
     }
     return result;
   }
@@ -120,7 +122,7 @@ export class OutlineModel {
       prev.parentId !== next.parentId ||
       prev.sortKey !== next.sortKey;
     if (prev !== undefined && positionChanged) {
-      this.unlinkChild(prev.parentId, prev.id);
+      this.unlinkChild(prev);
     }
     this.nodes.set(next.id, next);
     if (positionChanged) {
@@ -134,7 +136,7 @@ export class OutlineModel {
     if (!this.nodesBefore.has(id)) {
       this.nodesBefore.set(id, prev);
     }
-    this.unlinkChild(prev.parentId, id);
+    this.unlinkChild(prev);
     this.nodes.delete(id);
     this.removeUiState(id);
   }
@@ -164,6 +166,25 @@ export class OutlineModel {
       siblings = [];
       this.children.set(node.parentId, siblings);
     }
+    siblings.splice(this.indexOfChild(siblings, node), 0, node.id);
+  }
+
+  private unlinkChild(node: Node): void {
+    const siblings = this.children.get(node.parentId);
+    if (siblings === undefined) {
+      return;
+    }
+    const index = this.indexOfChild(siblings, node);
+    if (siblings[index] === node.id) {
+      siblings.splice(index, 1);
+    }
+    if (siblings.length === 0) {
+      this.children.delete(node.parentId);
+    }
+  }
+
+  /** The index of the node, or the index where to insert it. */
+  private indexOfChild(siblings: readonly string[], node: Node): number {
     let low = 0;
     let high = siblings.length;
     while (low < high) {
@@ -174,21 +195,7 @@ export class OutlineModel {
         high = mid;
       }
     }
-    siblings.splice(low, 0, node.id);
-  }
-
-  private unlinkChild(parentId: string | null, id: string): void {
-    const siblings = this.children.get(parentId);
-    if (siblings === undefined) {
-      return;
-    }
-    const index = siblings.indexOf(id);
-    if (index >= 0) {
-      siblings.splice(index, 1);
-    }
-    if (siblings.length === 0) {
-      this.children.delete(parentId);
-    }
+    return low;
   }
 }
 
