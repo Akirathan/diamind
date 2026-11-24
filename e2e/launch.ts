@@ -5,6 +5,7 @@ import {
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { MenuCommand } from "@/shared/menu";
 
 export interface LaunchedApp {
   app: ElectronApplication;
@@ -47,4 +48,17 @@ export async function launchApp(
     },
   };
   return launched;
+}
+
+export async function clickMenuItem(
+  app: ElectronApplication,
+  command: MenuCommand,
+): Promise<void> {
+  await app.evaluate(({ Menu }, id) => {
+    const item = Menu.getApplicationMenu()?.getMenuItemById(id);
+    if (!item?.enabled) {
+      throw new Error(`The menu item ${id} is missing or disabled`);
+    }
+    item.click();
+  }, command);
 }

@@ -1,45 +1,46 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { useMenuCommand } from "@/renderer/src/menu/menu-command";
 import type { UndoHistory } from "@/renderer/src/outline/history/undo";
 
-/**
- * Binds undo and redo of the outline. The event is always prevented, so the
- * native undo of the application menu does not run too.
- */
-export function useUndoKeys(history: UndoHistory): void {
+type UndoAction = "undo" | "redo";
+
+/** Binds undo and redo of the outline to the keys and to the application menu. */
+export function useUndo(history: UndoHistory): void {
+  useMenuCommand(
+    "undo",
+    useCallback(() => runMenuAction(history, "undo"), [history]),
+  );
+  useMenuCommand(
+    "redo",
+    useCallback(() => runMenuAction(history, "redo"), [history]),
+  );
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
-      if (event.defaultPrevented || !isOutlineTarget(event.target)) {
+      if (event.defaultPrevented || hasOwnUndo(event.target)) {
         return;
       }
       const action = actionOfKey(event);
       if (action !== null) {
+        // A prevented key does not trigger the accelerator of the menu item.
         event.preventDefault();
         history[action]();
       }
     }
 
-    // Undo and Redo clicked in the application menu.
-    function onBeforeInput(event: InputEvent): void {
-      if (!isOutlineTarget(event.target)) {
-        return;
-      }
-      if (event.inputType === "historyUndo") {
-        event.preventDefault();
-        history.undo();
-      }
-      if (event.inputType === "historyRedo") {
-        event.preventDefault();
-        history.redo();
-      }
-    }
-
     window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("beforeinput", onBeforeInput, true);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("beforeinput", onBeforeInput, true);
     };
   }, [history]);
+}
+
+function runMenuAction(history: UndoHistory, action: UndoAction): void {
+  if (hasOwnUndo(document.activeElement)) {
+    document.execCommand(action);
+  } else {
+    history[action]();
+  }
 }
 
 function actionOfKey(event: {
@@ -49,7 +50,7 @@ function actionOfKey(event: {
   altKey: boolean;
   shiftKey: boolean;
   isComposing: boolean;
-}): "undo" | "redo" | null {
+}): UndoAction | null {
   const isMac = navigator.platform.startsWith("Mac");
   const mod = isMac ? event.metaKey : event.ctrlKey;
   const otherMod = isMac ? event.ctrlKey : event.metaKey;
@@ -65,9 +66,9 @@ function actionOfKey(event: {
   return event.shiftKey ? "redo" : "undo";
 }
 
-/** Text inputs outside of the outline keep their own undo. */
-function isOutlineTarget(target: EventTarget | null): boolean {
-  return !(
+/** Text inputs outside of the outline keep their native undo. */
+function hasOwnUndo(target: EventTarget | null): boolean {
+  return (
     target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
   );
 }

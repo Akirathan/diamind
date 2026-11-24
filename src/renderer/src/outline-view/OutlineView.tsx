@@ -14,7 +14,7 @@ import {
   ensureVisibleNode,
   type OutlineSession,
 } from "@/renderer/src/outline-view/session";
-import { useUndoKeys } from "@/renderer/src/outline-view/editing/undo-keys";
+import { useUndo } from "@/renderer/src/outline-view/editing/undo-keys";
 
 const ESTIMATED_ROW_HEIGHT = 24;
 const OVERSCAN = 10;
@@ -25,7 +25,7 @@ export function OutlineView({ session }: { session: OutlineSession }) {
   const rows = useSyncExternalStore(rowsSource.subscribe, rowsSource.getRows);
   const focusRequest = useSyncExternalStore(focus.subscribe, focus.getRequest);
   const scrollRef = useRef<HTMLDivElement>(null);
-  useUndoKeys(history);
+  useUndo(history);
 
   useEffect(() => {
     if (rows.length === 0) {
