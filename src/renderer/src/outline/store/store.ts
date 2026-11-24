@@ -6,6 +6,7 @@ import type {
   NodeUiState,
 } from "@/shared/outline/node";
 import * as fields from "@/renderer/src/outline/commands/field-commands";
+import * as insertTree from "@/renderer/src/outline/commands/insert-tree";
 import {
   restoreRows,
   type RestoreRows,
@@ -86,6 +87,15 @@ export class OutlineStore {
       format,
       content,
     );
+    this.notify(result.changes);
+    return result;
+  }
+
+  appendTree(
+    parentId: string,
+    nodes: readonly insertTree.NewNode[],
+  ): insertTree.InsertTreeResult {
+    const result = insertTree.appendTree(this.model, parentId, nodes);
     this.notify(result.changes);
     return result;
   }

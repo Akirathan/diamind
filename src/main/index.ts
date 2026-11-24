@@ -6,6 +6,11 @@ import type { ChangeBatch } from "@/shared/outline/change-set";
 import { openDatabase, type Db } from "@/main/db/database";
 import { applyChangeSet, loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
+import { registerImportIpc } from "@/main/import/import-ipc";
+import {
+  setApplicationMenu,
+  setMenuCommandsEnabled,
+} from "@/main/menu/application-menu";
 import { openLink } from "@/main/open-link";
 import { resolveDataDir } from "@/main/paths";
 import { saveBeforeClose } from "@/main/save-before-close";
@@ -55,7 +60,9 @@ function createWindow(): BrowserWindow {
   saveBeforeClose(window, () => withOutline.has(window.webContents));
   window.on("closed", () => {
     mainWindow = null;
+    setMenuCommandsEnabled(false);
   });
+  setMenuCommandsEnabled(true);
 
   const devServerUrl = process.env.ELECTRON_RENDERER_URL;
   if (devServerUrl) {
@@ -126,6 +133,8 @@ if (!app.requestSingleInstanceLock()) {
       db.$client.close();
     });
     registerIpc(db);
+    registerImportIpc();
+    setApplicationMenu(() => mainWindow);
     mainWindow = createWindow();
   });
 }

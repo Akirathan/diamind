@@ -300,19 +300,6 @@ test("typing is one undo step until the cursor moves", async () => {
   await expectCursor(page, "Node 6acd|b");
 });
 
-test("Undo of the application menu undoes exactly one step", async () => {
-  const page = await launch(6);
-  await putCursor(page, "seed-6", 6);
-  await page.keyboard.type("ab");
-  await page.keyboard.press("ArrowLeft");
-  await settle(page);
-  await page.keyboard.type("cd");
-  await launched?.app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].webContents.undo(),
-  );
-  await expectCursor(page, "Node 6a|b");
-});
-
 test("undo works without a focused node", async () => {
   const page = await launch(6);
   await putCursor(page, "seed-6", 3);

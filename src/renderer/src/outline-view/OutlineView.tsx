@@ -7,6 +7,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
+import { useImport } from "@/renderer/src/import/use-import";
 import { keepCurrentRow } from "@/renderer/src/outline-view/rows/kept-row";
 import { OutlineRowView } from "@/renderer/src/outline-view/rows/OutlineRowView";
 import { revealCursor } from "@/renderer/src/outline-view/focus/reveal-cursor";
@@ -14,7 +15,7 @@ import {
   ensureVisibleNode,
   type OutlineSession,
 } from "@/renderer/src/outline-view/session";
-import { useUndoKeys } from "@/renderer/src/outline-view/editing/undo-keys";
+import { useUndo } from "@/renderer/src/outline-view/editing/undo-keys";
 
 const ESTIMATED_ROW_HEIGHT = 24;
 const OVERSCAN = 10;
@@ -25,7 +26,8 @@ export function OutlineView({ session }: { session: OutlineSession }) {
   const rows = useSyncExternalStore(rowsSource.subscribe, rowsSource.getRows);
   const focusRequest = useSyncExternalStore(focus.subscribe, focus.getRequest);
   const scrollRef = useRef<HTMLDivElement>(null);
-  useUndoKeys(history);
+  useUndo(history);
+  useImport({ store, editing, rootId: store.rootId });
 
   useEffect(() => {
     if (rows.length === 0) {
