@@ -5,9 +5,8 @@
 - Three dots gives a context menu for the node:
   - Turn Into -> Bullets, Paragraph, Code block, Heading 1, Heading 2, Heading 3, Divider
   - Complete / Uncomplete, see [Completed nodes](completed.md)
-- Pasting text with several lines:
-  - The first line is inserted at the cursor. Each further line becomes a new sibling below.
-  - The text after the cursor goes to the end of the last line.
+- Pasting text with several lines behaves the same as typing each line and hitting `Enter` between the lines.
+  - For example, the text after the cursor and the children go to the last line, as in a split. At the end of a node with expanded children, the lines after the first one become its first children.
   - Blank lines are dropped.
 - Dropped text with line breaks gets spaces instead of them. A node never contains a line break in its text.
 - Hiting `Tab` on any position in the node _indents_ it.
@@ -38,9 +37,13 @@
     - If the upper node is the parent of the merged node, they go after the other children of the parent.
   - The note of the merged node is appended to the note of the upper node, see [Notes](notes.md).
   - Attributes of the merged node are added to the upper node. If both have the same key, the value of the upper node wins.
+  - If it is not clear where the children of the merged node should go, nothing happens. The user can use drag-and-drop instead. These cases are:
+    - Both the merged node and its previous sibling have children, expanded or collapsed.
+    - The merged node has collapsed children.
   - If the upper node is a divider or an attachment, nothing happens.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
+  - In the first / last visible node, the cursor moves as in any text field of the system. On macOS, it goes to the beginning / end of the text.
 - Attachment nodes have no text cursor. When the cursor moves to an attachment node (`Up` / `Down`), the node is _selected_ (highlighted).
   - `Up` / `Down` moves to the previous / next visible node.
   - `Backspace` or `Delete` deletes the attachment node.

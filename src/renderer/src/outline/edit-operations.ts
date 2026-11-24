@@ -120,7 +120,7 @@ export function mergeIntoUpper(
   }
   const node = getNode(store, id);
   const upper = getNode(store, upperId);
-  if (!hasText(node) || !hasText(upper)) {
+  if (!hasText(node) || !hasText(upper) || !canMergeChildren(store, node)) {
     return null;
   }
   store.setText(upperId, upper.text + node.text);
@@ -130,7 +130,9 @@ export function mergeIntoUpper(
       store.setAttribute(upperId, key, value);
     }
   }
-  mergeCollapsed(store, id, upperId);
+  if (store.getChildren(id).length > 0) {
+    store.setCollapsed(upperId, false);
+  }
   store.dissolveNode(id, upperId);
   return cursorAt(upperId, upper.text.length);
 }
@@ -139,20 +141,17 @@ function joinNotes(upper: string, lower: string): string {
   return upper !== "" && lower !== "" ? `${upper}\n${lower}` : upper + lower;
 }
 
-/** Keeps the visible children of the merged node visible, and the collapsed ones collapsed. */
-function mergeCollapsed(
-  store: OutlineStore,
-  id: string,
-  upperId: string,
-): void {
-  if (isExpanded(store, id)) {
-    store.setCollapsed(upperId, false);
-  } else if (
-    store.getChildren(id).length > 0 &&
-    store.getChildren(upperId).length === 0
-  ) {
-    store.setCollapsed(upperId, true);
+/** False if it would not be clear where the children of the merged node go. */
+function canMergeChildren(store: OutlineStore, node: Node): boolean {
+  if (store.getChildren(node.id).length === 0) {
+    return true;
   }
+  const siblings = store.getChildren(node.parentId as string);
+  const index = siblings.indexOf(node.id);
+  return (
+    !isCollapsed(store, node.id) &&
+    (index === 0 || store.getChildren(siblings[index - 1]).length === 0)
+  );
 }
 
 export function indentNode(
@@ -179,9 +178,9 @@ export function splitLines(text: string): string[] {
   return text.split(/\r\n|\r|\n/).filter((line) => line.trim() !== "");
 }
 
-/** Replaces the selected range. Each line after the first one becomes a new sibling below. */
+/** Replaces the selected range, as if each line was typed with `enter` between the lines. */
 export function pasteLines(
-  { store }: EditContext,
+  context: EditContext,
   id: string,
   from: number,
   to: number,
@@ -190,23 +189,19 @@ export function pasteLines(
   if (lines.length === 0) {
     return null;
   }
-  const node = getNode(store, id);
-  const before = node.text.slice(0, from);
-  const after = node.text.slice(to);
-  const [first, ...rest] = lines;
-  const lastLine = rest.pop();
-  if (lastLine === undefined) {
-    store.setText(id, before + first + after);
-    return cursorAt(id, from + first.length);
+  const { store } = context;
+  const { text } = getNode(store, id);
+  store.setText(id, text.slice(0, from) + lines[0] + text.slice(to));
+  let nodeId = id;
+  let offset = from + lines[0].length;
+  for (const line of lines.slice(1)) {
+    const cursor = enter(context, nodeId, offset, offset);
+    // Never `null`: the node is not empty.
+    nodeId = (cursor as NodeCursor).nodeId;
+    store.setText(nodeId, line + getNode(store, nodeId).text);
+    offset = line.length;
   }
-  store.setText(id, before + first);
-  const parentId = node.parentId as string;
-  const format = continuedFormat(node);
-  let previousId = id;
-  for (const text of [...rest, lastLine + after]) {
-    previousId = store.insertNode(parentId, previousId, format, { text }).id;
-  }
-  return cursorAt(previousId, lastLine.length);
+  return cursorAt(nodeId, offset);
 }
 
 function getNode(store: OutlineStore, id: string): Node {

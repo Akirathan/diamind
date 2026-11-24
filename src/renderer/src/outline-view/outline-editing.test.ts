@@ -48,12 +48,10 @@ describe("edits", () => {
   it("change nothing and keep the cursor if the store rejects them", () => {
     const { store, editing, history, focus, putCursor } = setup(`
       a
-        ~a1
-      b
-        ~b1
+        b
+          ~c
+        ~d
     `);
-    store.setCollapsed("a", true);
-    history.clear();
     const before = snapshot(store);
     const cursor = cursorAt("a", 0);
     putCursor(cursor);

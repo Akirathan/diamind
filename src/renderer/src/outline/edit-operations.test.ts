@@ -473,17 +473,9 @@ describe("mergeIntoUpper", () => {
         a1
           a2
       b
-        c
     `);
-    run(merge("b"));
-    expect(dump(store)).toBe(
-      outline(`
-        a
-          a1
-            a2
-              c
-      `),
-    );
+    expect(run(merge("b"))).toEqual(cursorAt("a2", 2));
+    expect(dump(store)).toBe("a\n  a1\n    a2");
     expect(node("a2").text).toBe("a2b");
   });
 
@@ -527,7 +519,42 @@ describe("mergeIntoUpper", () => {
     expect(node("a").text).toBe("b");
   });
 
-  it("expands a collapsed upper node if the merged node has visible children", () => {
+  it("does nothing if the node and the previous sibling have children", () => {
+    const { store, expectUnchanged } = setup(`
+      a
+        a1
+      b
+        b1
+    `);
+    expectUnchanged(merge("b"));
+    store.setCollapsed("a", true);
+    expectUnchanged(merge("b"));
+    store.setCollapsed("b", true);
+    expectUnchanged(merge("b"));
+  });
+
+  it("does nothing if the node has collapsed children", () => {
+    const { store, expectUnchanged } = setup(`
+      a
+      b
+        b1
+    `);
+    store.setCollapsed("b", true);
+    expectUnchanged(merge("b"));
+  });
+
+  it("is the opposite of a split of a node with expanded children", () => {
+    const { store, run } = setup(`
+      abc
+        child
+    `);
+    run(enterAt("abc", 1));
+    expect(run(merge("n1"))).toEqual(cursorAt("abc", 1));
+    expect(dump(store)).toBe("abc\n  child");
+    expect(store.getNode("abc")?.text).toBe("abc");
+  });
+
+  it("shows the children below an upper node that was collapsed before it lost its own", () => {
     const { store, run } = setup(`
       a
         a1
@@ -535,8 +562,8 @@ describe("mergeIntoUpper", () => {
         b1
     `);
     store.setCollapsed("a", true);
+    store.deleteNode("a1");
     run(merge("b"));
-    expect(store.getChildren("a")).toEqual(["a1", "b1"]);
     expect(store.getUiState("a")?.collapsed).toBe(false);
   });
 
@@ -548,18 +575,6 @@ describe("mergeIntoUpper", () => {
     `);
     store.setCollapsed("a", true);
     run(merge("b"));
-    expect(store.getUiState("a")?.collapsed).toBe(true);
-  });
-
-  it("keeps the collapsed children of the merged node collapsed", () => {
-    const { store, run } = setup(`
-      a
-      b
-        b1
-    `);
-    store.setCollapsed("b", true);
-    run(merge("b"));
-    expect(store.getChildren("a")).toEqual(["b1"]);
     expect(store.getUiState("a")?.collapsed).toBe(true);
   });
 
@@ -579,14 +594,13 @@ describe("mergeIntoUpper", () => {
     expectUnchanged(merge("b"));
   });
 
-  it("is rejected if the upper node would end with two empty children", () => {
-    const { store, expectRejectedEdit } = setup(`
+  it("is rejected if the parent would end with two empty children", () => {
+    const { expectRejectedEdit } = setup(`
       a
-        ~a1
-      b
-        ~b1
+        b
+          ~c
+        ~d
     `);
-    store.setCollapsed("a", true);
     expectRejectedEdit(merge("b"));
   });
 
@@ -694,7 +708,7 @@ describe("pasteLines", () => {
     return (context: EditContext) => pasteLines(context, id, from, to, lines);
   }
 
-  it("creates a sibling for each line after the first one", () => {
+  it("splits the node and moves the children to the last line", () => {
     const { store, run, node } = setup(`
       abcd
         child
@@ -706,15 +720,65 @@ describe("pasteLines", () => {
     expect(dump(store)).toBe(
       outline(`
         abcd
-          child
         n1
         n2
+          child
         e
       `),
     );
     expect(node("abcd").text).toBe("ax");
     expect(node("n1").text).toBe("y");
     expect(node("n2").text).toBe("zzd");
+  });
+
+  it("moves the children to the last line at the beginning of the text", () => {
+    const { store, run, node } = setup(`
+      a
+        child
+    `);
+    run(paste("a", 0, 0, ["x", "y"]));
+    expect(dump(store)).toBe("a\nn1\n  child");
+    expect(node("a").text).toBe("x");
+    expect(node("n1").text).toBe("ya");
+  });
+
+  it("creates first children at the end of a node with expanded children", () => {
+    const { store, run, node } = setup(`
+      a
+        child
+    `);
+    expect(run(paste("a", 1, 1, ["x", "y", "z"]))).toEqual(cursorAt("n2", 1));
+    expect(dump(store)).toBe("a\n  n1\n  n2\n  child");
+    expect(node("a").text).toBe("ax");
+    expect(node("n2").text).toBe("z");
+  });
+
+  it("creates siblings at the end of a node with collapsed children", () => {
+    const { store, run } = setup(`
+      a
+        child
+      b
+    `);
+    store.setCollapsed("a", true);
+    run(paste("a", 1, 1, ["x", "y", "z"]));
+    expect(dump(store)).toBe("a\n  child\nn1\nn2\nb");
+  });
+
+  it("fills an empty last sibling", () => {
+    const { store, run, node } = setup(`
+      a
+      ~b
+    `);
+    run(paste("a", 1, 1, ["x", "y"]));
+    expect(store.getChildren(ROOT)).toEqual(["a", "b"]);
+    expect(node("b").text).toBe("y");
+  });
+
+  it("fills an empty node", () => {
+    const { store, run, node } = setup("~a");
+    run(paste("a", 0, 0, ["x", "y"]));
+    expect(dump(store)).toBe("a\nn1");
+    expect(node("a").text).toBe("x");
   });
 
   it("continues a paragraph", () => {
