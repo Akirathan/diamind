@@ -1,4 +1,5 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
+import type { MenuCommand } from "@/shared/menu";
 import { IpcChannel, type DiamindApi } from "@/shared/api";
 
 let flushChanges: (() => Promise<void>) | null = null;
@@ -21,6 +22,15 @@ const api: DiamindApi = {
     };
   },
   openLink: (url) => ipcRenderer.invoke(IpcChannel.OpenLink, url),
+  onMenuCommand: (listener) => {
+    function onCommand(_event: IpcRendererEvent, command: MenuCommand): void {
+      listener(command);
+    }
+    ipcRenderer.on(IpcChannel.MenuCommand, onCommand);
+    return () => {
+      ipcRenderer.off(IpcChannel.MenuCommand, onCommand);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld("diamind", api);
