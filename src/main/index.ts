@@ -1,12 +1,14 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, type WebContents } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { IpcChannel, type AppInfo } from "@/shared/api";
+import { IpcChannel, type AppInfo, type Json } from "@/shared/api";
+import type { ChangeBatch } from "@/shared/outline/change-set";
 import { openDatabase, type Db } from "@/main/db/database";
-import { loadOutline } from "@/main/db/outline";
+import { applyChangeSet, loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
 import { openLink } from "@/main/open-link";
 import { resolveDataDir } from "@/main/paths";
+import { saveBeforeClose } from "@/main/save-before-close";
 
 const dataDir = resolveDataDir();
 mkdirSync(dataDir, { recursive: true });
@@ -19,6 +21,9 @@ if (hidden) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let quitting = false;
+/** Only these can have unsaved changes. */
+const withOutline = new WeakSet<WebContents>();
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -47,6 +52,7 @@ function createWindow(): BrowserWindow {
       event.preventDefault();
     }
   });
+  saveBeforeClose(window, () => withOutline.has(window.webContents));
   window.on("closed", () => {
     mainWindow = null;
   });
@@ -66,7 +72,16 @@ function registerIpc(db: Db): void {
     dataDir,
     devSeedNodeCount: resolveSeedNodeCount(process.env, app.isPackaged),
   }));
-  ipcMain.handle(IpcChannel.LoadOutline, () => loadOutline(db));
+  ipcMain.handle(IpcChannel.LoadOutline, (event) => {
+    withOutline.add(event.sender);
+    return loadOutline(db);
+  });
+  ipcMain.handle(
+    IpcChannel.SaveChanges,
+    (_event, batch: Json<ChangeBatch>): void => {
+      applyChangeSet(db, JSON.parse(batch) as ChangeBatch);
+    },
+  );
   ipcMain.handle(IpcChannel.OpenLink, (_event, url: unknown) =>
     openLink(url, shell),
   );
@@ -85,8 +100,13 @@ if (!app.requestSingleInstanceLock()) {
     mainWindow.focus();
   });
 
+  app.on("before-quit", () => {
+    quitting = true;
+  });
+
+  // The delayed close of a window cancels the quit, so it starts again here.
   app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
+    if (quitting || process.platform !== "darwin") {
       app.quit();
     }
   });

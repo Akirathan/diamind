@@ -16,6 +16,12 @@ export interface ChangeSet {
   uiState: TableChanges<NodeUiState>;
 }
 
+/** The rows of a `ChangeSet` to write to the database. */
+export interface ChangeBatch {
+  nodes: Omit<TableChanges<Node>, "before">;
+  uiState: Omit<TableChanges<NodeUiState>, "before">;
+}
+
 export function emptyChangeSet(): ChangeSet {
   return {
     nodes: { upsert: [], delete: [], before: [] },

@@ -113,11 +113,16 @@ uiState: Map<string, NodeUiState>;
 
 1. The renderer puts changed rows into a queue. A newer change of the same row replaces the older one.
 2. ~300 ms after the last change, the queue is sent to the main process via IPC.
+   - While changes come without such a pause, the queue is sent at the latest 2 s after the first unsaved change.
 3. The main process writes the whole batch in one SQLite transaction.
-4. The queue is also flushed immediately on window blur and on app quit.
+4. The queue is also flushed immediately on window blur, on page reload, on window close and on app quit.
+   - Window close and app quit wait for the last save, at most 5 s. A page reload does not wait.
+5. If a save fails, the rows stay in the queue and the save is retried. The error is logged to the console.
+   - If it still fails at the timeout of the quit, the app quits and the changes are lost. There is no dialog.
+   - #todo persistent logging of errors.
 
 - SQLite settings: `journal_mode = WAL`, `synchronous = NORMAL`, `foreign_keys = ON`.
-- A crash may lose up to the last ~300 ms of changes. This is acceptable.
+- A crash may lose the changes since the last save, i.e. up to ~300 ms, or up to 2 s of continuous typing. This is acceptable.
 - A crash never corrupts the database (WAL).
 
 ## Undo / redo
@@ -141,6 +146,8 @@ uiState: Map<string, NodeUiState>;
 2. The main process reads all rows of `nodes` and `node_ui_state` and sends them to the renderer.
 3. The renderer builds the in-memory model and shows the last zoomed node from `app_state`.
    - For an empty database, the store creates the global root. `OutlineStore.load()` returns it as a change set, which must be saved like any other change. Otherwise, each start creates a root with a different id.
+   - If the outline cannot be loaded, one line of text with the error is shown and nothing is written. The error is logged to the console.
+     - #todo a persistent `[ERROR]` log.
 
 - Target: under 1 s for 500k nodes. Measured: ~0.6 s until the renderer has the rows, ~0.25 s of it is the read in the main process.
 - `loadOutline()` returns JSON text (`OutlineJson`), not objects. The renderer parses it with `parseOutlineJson()`.
