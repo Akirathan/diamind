@@ -36,11 +36,18 @@ test("renderer has no Node.js access", async () => {
   expect(await window.evaluate(() => typeof process)).toBe("undefined");
 });
 
-test("creates the database and loads an empty outline", async () => {
+test("creates the database with the global root and one empty node", async () => {
   const page = await launched.app.firstWindow();
-  const outline = await page.evaluate(() =>
-    (window as unknown as { diamind: DiamindApi }).diamind.loadOutline(),
-  );
-  expect(parseOutlineJson(outline)).toEqual({ nodes: [], uiState: [] });
+  await expect(async () => {
+    const outline = await page.evaluate(() =>
+      (window as unknown as { diamind: DiamindApi }).diamind.loadOutline(),
+    );
+    const { nodes, uiState } = parseOutlineJson(outline);
+    expect(nodes).toHaveLength(2);
+    const root = nodes.find((node) => node.parentId === null);
+    const child = nodes.find((node) => node.parentId === root?.id);
+    expect(child).toMatchObject({ text: "", note: "" });
+    expect(uiState).toEqual([]);
+  }).toPass();
   expect(existsSync(join(launched.dataDir, "diamind.db"))).toBe(true);
 });

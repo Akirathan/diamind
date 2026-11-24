@@ -9,6 +9,8 @@ import { join } from "node:path";
 export interface LaunchedApp {
   app: ElectronApplication;
   dataDir: string;
+  /** Quits the app and starts it again with the same data directory. Replaces `app`. */
+  restart(extraEnv?: Record<string, string>): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -26,13 +28,23 @@ export async function launchApp(
   env.DIAMIND_DATA_DIR = dataDir;
   env.DIAMIND_HIDDEN ??= "1";
   Object.assign(env, extraEnv);
-  const app = await electron.launch({ args: ["."], env });
-  return {
-    app,
+
+  function start(): Promise<ElectronApplication> {
+    return electron.launch({ args: ["."], env });
+  }
+
+  const launched: LaunchedApp = {
+    app: await start(),
     dataDir,
+    restart: async (restartEnv = {}) => {
+      await launched.app.close();
+      Object.assign(env, restartEnv);
+      launched.app = await start();
+    },
     close: async () => {
-      await app.close();
+      await launched.app.close();
       rmSync(dataDir, { recursive: true, force: true });
     },
   };
+  return launched;
 }
