@@ -625,9 +625,26 @@ describe("indentNode and unindentNode", () => {
       a
       bcd
     `);
-    const cursor = { nodeId: "bcd", anchor: 1, head: 2 };
+    const cursor: NodeCursor = {
+      nodeId: "bcd",
+      field: "text",
+      anchor: 1,
+      head: 2,
+    };
     expect(run((context) => indentNode(context, cursor))).toEqual(cursor);
     expect(dump(store)).toBe("a\n  bcd");
+  });
+
+  it("keep a cursor in the note", () => {
+    const { store, run } = setup(`
+      a
+      b
+    `);
+    store.setNote("b", "note");
+    const cursor = cursorAt("b", 2, "note");
+    expect(run((context) => indentNode(context, cursor))).toEqual(cursor);
+    expect(run((context) => unindentNode(context, cursor))).toEqual(cursor);
+    expect(dump(store)).toBe("a\nb");
   });
 
   it("expands a collapsed new parent", () => {

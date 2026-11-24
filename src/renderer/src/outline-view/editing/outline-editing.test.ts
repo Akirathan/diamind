@@ -85,25 +85,108 @@ describe("moveUp and moveDown", () => {
       a
         b
     `);
-    expect(editing.moveDown("a")).toBe(true);
+    expect(editing.moveDown(cursorAt("a", 0))).toBe(true);
     expect(focus.getRequest()).toEqual(cursorAt("b", 0));
-    expect(editing.moveDown("b")).toBe(false);
-    expect(editing.moveUp("b")).toBe(true);
+    expect(editing.moveDown(cursorAt("b", 0))).toBe(false);
+    expect(editing.moveUp(cursorAt("b", 0))).toBe(true);
     expect(focus.getRequest()).toEqual(cursorAt("a", 0));
-    expect(editing.moveUp("a")).toBe(false);
+    expect(editing.moveUp(cursorAt("a", 0))).toBe(false);
   });
 
   it("end the merge of text edits", () => {
     const { store, editing, history } = setup("a\nb");
     store.setText("a", "a1");
-    editing.moveDown("a");
+    editing.moveDown(cursorAt("a", 0));
     store.setText("a", "a12");
     history.undo();
     expect(store.getNode("a")?.text).toBe("a1");
   });
 });
 
+describe("notes", () => {
+  it("get the cursor at the end and give it back to the end of the text", () => {
+    const { store, editing, focus } = setup("abc");
+    store.setNote("abc", "note");
+    editing.toggleNote(cursorAt("abc", 1));
+    expect(focus.getRequest()).toEqual(cursorAt("abc", 4, "note"));
+    editing.toggleNote(cursorAt("abc", 0, "note"));
+    expect(focus.getRequest()).toEqual(cursorAt("abc", 3));
+  });
+
+  it("are consecutive lines with the text", () => {
+    const { store, editing, focus } = setup("a\nb");
+    store.setNote("a", "x\ny");
+    editing.moveDown(cursorAt("a", 0));
+    expect(focus.getRequest()).toEqual(cursorAt("a", 0, "note"));
+    editing.moveDown(cursorAt("a", 3, "note"));
+    expect(focus.getRequest()).toEqual(cursorAt("b", 0));
+    editing.moveUp(cursorAt("b", 0));
+    expect(focus.getRequest()).toEqual({
+      ...cursorAt("a", 3, "note"),
+      toLineStart: true,
+    });
+  });
+
+  it("do not merge with the text into one undo step", () => {
+    const { store, editing, history, focus, putCursor } = setup("a");
+    putCursor(cursorAt("a", 1));
+    store.setText("a", "ab");
+    editing.toggleNote(cursorAt("a", 2));
+    store.setNote("a", "n");
+    focus.setCursor(cursorAt("a", 1, "note"));
+    history.setCursorAfter(cursorAt("a", 1, "note"));
+    editing.toggleNote(cursorAt("a", 1, "note"));
+
+    history.undo();
+    expect(store.getNode("a")).toMatchObject({ text: "ab", note: "" });
+    expect(focus.getRequest()).toEqual(cursorAt("a", 0, "note"));
+    history.undo();
+    expect(store.getNode("a")?.text).toBe("a");
+    expect(focus.getRequest()).toEqual(cursorAt("a", 1));
+    history.redo();
+    history.redo();
+    expect(store.getNode("a")?.note).toBe("n");
+    expect(focus.getRequest()).toEqual(cursorAt("a", 1, "note"));
+  });
+
+  it("lose the cursor when they are empty and lose the focus", () => {
+    const { store, editing, focus, putCursor } = setup("a\nb");
+    const inNote = cursorAt("a", 0, "note");
+    putCursor(inNote);
+    store.setNote("a", "n");
+    editing.closeEmptyNote(inNote);
+    expect(focus.cursor).toEqual(inNote);
+    store.setNote("a", "");
+    editing.closeEmptyNote(cursorAt("a", 0));
+    expect(focus.cursor).toEqual(inNote);
+    editing.closeEmptyNote(inNote);
+    expect(focus.cursor).toEqual(cursorAt("a", 1));
+
+    putCursor(cursorAt("b", 0));
+    editing.closeEmptyNote(inNote);
+    expect(focus.cursor).toEqual(cursorAt("b", 0));
+  });
+});
+
 describe("the cursor after undo", () => {
+  it("goes to a changed note if its own node is hidden", () => {
+    const { store, history, focus, putCursor } = setup(`
+      a
+        b
+      c
+    `);
+    putCursor(cursorAt("b", 1));
+    store.setNote("c", "note");
+    history.breakMerge();
+    store.setNote("c", "note 2");
+    history.untracked(() => store.setCollapsed("a", true));
+    history.undo();
+    expect(focus.getRequest()).toEqual(cursorAt("c", 4, "note"));
+    putCursor(cursorAt("b", 1));
+    history.undo();
+    expect(focus.getRequest()).toEqual(cursorAt("c", 1));
+  });
+
   it("goes to a changed node if its own node is hidden", () => {
     const { store, history, focus, putCursor } = setup(`
       a

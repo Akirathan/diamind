@@ -1,14 +1,19 @@
-import { EditorState, Prec, type Extension } from "@codemirror/state";
+import { Prec, type Extension } from "@codemirror/state";
 import { EditorView, keymap, type ViewUpdate } from "@codemirror/view";
-import type { NodeCursor } from "@/renderer/src/outline/editing/cursor";
+import type { NodeField } from "@/renderer/src/outline/editing/cursor";
 import { fromStore } from "@/renderer/src/outline-view/editors/from-store";
+import {
+  cursorOf,
+  onCursor,
+  type FieldOf,
+} from "@/renderer/src/outline-view/editing/editor-cursor";
+import { noteField } from "@/renderer/src/outline-view/editing/note-field";
 import type { OutlineEditing } from "@/renderer/src/outline-view/editing/outline-editing";
+import { textField } from "@/renderer/src/outline-view/editing/text-field";
 import {
   isOnFirstLine,
   isOnLastLine,
 } from "@/renderer/src/outline-view/editing/visual-line";
-
-type NodeIdOf = (view: EditorView) => string | undefined;
 
 /**
  * Keys, paste and cursor tracking of a node editor. Must follow the update
@@ -16,74 +21,41 @@ type NodeIdOf = (view: EditorView) => string | undefined;
  */
 export function editingExtensions(
   editing: OutlineEditing,
-  nodeIdOf: NodeIdOf,
+  field: NodeField,
+  fieldOf: FieldOf,
 ): Extension {
   return [
-    editingKeys(editing, nodeIdOf),
-    EditorView.domEventHandlers({
-      paste: (event, view) => {
-        const text = event.clipboardData?.getData("text/plain") ?? "";
-        const nodeId = nodeIdOf(view);
-        if (nodeId === undefined || !/[\r\n]/.test(text)) {
-          return false;
-        }
-        const { from, to } = view.state.selection.main;
-        editing.paste(nodeId, from, to, text);
-        return true;
-      },
-      // E.g. `Shift + Enter`, which no key binding handles.
-      beforeinput: (event) =>
-        event.inputType === "insertParagraph" ||
-        event.inputType === "insertLineBreak",
-    }),
-    singleLine,
+    sharedKeys(editing, fieldOf),
+    field === "text"
+      ? textField(editing, fieldOf)
+      : noteField(editing, fieldOf),
     EditorView.updateListener.of((update) =>
-      trackCursor(update, editing, nodeIdOf),
+      trackCursor(update, editing, fieldOf),
     ),
   ];
 }
 
-function editingKeys(editing: OutlineEditing, nodeIdOf: NodeIdOf): Extension {
-  /** Runs the key with the cursor, unless the editor has no node. */
-  function onCursor(
-    run: (cursor: NodeCursor, view: EditorView) => boolean,
-  ): (view: EditorView) => boolean {
-    return (view) => {
-      const cursor = cursorOf(view, nodeIdOf);
-      return cursor !== null && run(cursor, view);
-    };
-  }
-
+/** The keys that work in the text and in the note. */
+function sharedKeys(editing: OutlineEditing, fieldOf: FieldOf): Extension {
   return Prec.high(
     keymap.of([
       {
-        key: "Enter",
-        run: onCursor(({ nodeId }, view) => {
-          const { from, to } = view.state.selection.main;
-          editing.enter(nodeId, from, to);
-          return true;
-        }),
-      },
-      {
-        key: "Backspace",
-        run: onCursor(({ nodeId, anchor, head }) => {
-          if (anchor !== 0 || head !== 0) {
-            return false;
-          }
-          editing.mergeIntoUpper(nodeId);
+        key: "Shift-Enter",
+        run: onCursor(fieldOf, (cursor) => {
+          editing.toggleNote(cursor);
           return true;
         }),
       },
       {
         key: "Tab",
-        run: onCursor((cursor) => {
+        run: onCursor(fieldOf, (cursor) => {
           editing.indent(cursor);
           return true;
         }),
       },
       {
         key: "Shift-Tab",
-        run: onCursor((cursor) => {
+        run: onCursor(fieldOf, (cursor) => {
           editing.unindent(cursor);
           return true;
         }),
@@ -91,59 +63,36 @@ function editingKeys(editing: OutlineEditing, nodeIdOf: NodeIdOf): Extension {
       {
         key: "ArrowUp",
         run: onCursor(
-          ({ nodeId }, view) =>
+          fieldOf,
+          (cursor, view) =>
             isOnFirstLine(view, view.state.selection.main) &&
-            editing.moveUp(nodeId),
+            editing.moveUp(cursor),
         ),
       },
       {
         key: "ArrowDown",
         run: onCursor(
-          ({ nodeId }, view) =>
+          fieldOf,
+          (cursor, view) =>
             isOnLastLine(view, view.state.selection.main) &&
-            editing.moveDown(nodeId),
+            editing.moveDown(cursor),
         ),
       },
     ]),
   );
 }
 
-/** Replaces each inserted line break by a space, e.g. of dropped text. */
-const singleLine = EditorState.transactionFilter.of((tr) => {
-  if (
-    !tr.docChanged ||
-    tr.annotation(fromStore) === true ||
-    tr.newDoc.lines === 1
-  ) {
-    return tr;
-  }
-  const changes: { from: number; to: number; insert: string }[] = [];
-  tr.changes.iterChanges((from, to, _fromB, _toB, inserted) => {
-    changes.push({
-      from,
-      to,
-      insert: inserted.sliceString(0, inserted.length, " "),
-    });
-  });
-  return {
-    changes,
-    selection: tr.selection,
-    effects: tr.effects,
-    scrollIntoView: tr.scrollIntoView,
-  };
-});
-
 function trackCursor(
   update: ViewUpdate,
   editing: OutlineEditing,
-  nodeIdOf: NodeIdOf,
+  fieldOf: FieldOf,
 ): void {
   const { view, docChanged, selectionSet, focusChanged } = update;
-  const cursor = cursorOf(view, nodeIdOf);
+  const cursor = cursorOf(view, fieldOf);
   if (
     cursor === null ||
     !(docChanged || selectionSet || focusChanged) ||
-    editing.currentNode.get() !== cursor.nodeId
+    !editing.focus.isIn(cursor)
   ) {
     return;
   }
@@ -157,13 +106,4 @@ function trackCursor(
 
 function isFromStore(update: ViewUpdate): boolean {
   return update.transactions.some((tr) => tr.annotation(fromStore) === true);
-}
-
-function cursorOf(view: EditorView, nodeIdOf: NodeIdOf): NodeCursor | null {
-  const nodeId = nodeIdOf(view);
-  if (nodeId === undefined) {
-    return null;
-  }
-  const { anchor, head } = view.state.selection.main;
-  return { nodeId, anchor, head };
 }

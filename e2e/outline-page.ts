@@ -60,7 +60,7 @@ export async function putCursor(
   offset: number,
 ): Promise<void> {
   const row = page.locator(`[data-node-id="${nodeId}"]`);
-  await row.locator(".cm-line").click();
+  await row.locator(".cm-line").first().click();
   await page.keyboard.press(
     process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home",
   );

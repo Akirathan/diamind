@@ -1,4 +1,9 @@
-import type { NodeCursor } from "@/renderer/src/outline/editing/cursor";
+import {
+  isSameField,
+  type FieldRef,
+  type NodeCursor,
+} from "@/renderer/src/outline/editing/cursor";
+import type { CursorTarget } from "@/renderer/src/outline/editing/cursor-moves";
 import type { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
 
 /**
@@ -7,8 +12,9 @@ import type { CurrentNode } from "@/renderer/src/outline-view/focus/current-node
  */
 export class NodeFocus {
   private lastCursor: NodeCursor | null = null;
-  private lastRequest: NodeCursor | null = null;
+  private lastRequest: CursorTarget | null = null;
   private readonly listeners = new Set<() => void>();
+  private readonly fieldListeners = new Set<() => void>();
 
   constructor(private readonly currentNode: CurrentNode) {}
 
@@ -18,24 +24,31 @@ export class NodeFocus {
     return lastCursor?.nodeId === this.currentNode.get() ? lastCursor : null;
   }
 
-  /** Reports a cursor move that already happened in the editor of the current node. */
-  setCursor(cursor: NodeCursor): void {
-    this.lastCursor = cursor;
+  isIn(ref: FieldRef): boolean {
+    const { cursor } = this;
+    return cursor !== null && isSameField(cursor, ref);
   }
 
-  /** Focuses the node and scrolls the cursor into view. Offsets behind the text are clamped. */
-  request(cursor: NodeCursor): void {
-    // Before the current node, so that its subscribers see the new cursor.
+  /** Reports a cursor move that already happened in the editor of the current node. */
+  setCursor(cursor: NodeCursor): void {
+    const last = this.lastCursor;
     this.lastCursor = cursor;
-    this.currentNode.set(cursor.nodeId);
-    // A copy, so that a repeated request of the same cursor is a new one.
-    this.lastRequest = { ...cursor };
-    for (const listener of this.listeners) {
-      listener();
+    if (last === null || !isSameField(last, cursor)) {
+      notify(this.fieldListeners);
     }
   }
 
-  readonly getRequest = (): NodeCursor | null => this.lastRequest;
+  /** Focuses the node and scrolls the cursor into view. Offsets behind the text are clamped. */
+  request(target: CursorTarget): void {
+    // Before the current node, so that its subscribers see the new cursor.
+    this.setCursor(target);
+    this.currentNode.set(target.nodeId);
+    // A copy, so that a repeated request of the same cursor is a new one.
+    this.lastRequest = { ...target };
+    notify(this.listeners);
+  }
+
+  readonly getRequest = (): CursorTarget | null => this.lastRequest;
 
   readonly subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -43,4 +56,18 @@ export class NodeFocus {
       this.listeners.delete(listener);
     };
   };
+
+  /** Notifies when the cursor moves to another field. */
+  readonly subscribeField = (listener: () => void): (() => void) => {
+    this.fieldListeners.add(listener);
+    return () => {
+      this.fieldListeners.delete(listener);
+    };
+  };
+}
+
+function notify(listeners: ReadonlySet<() => void>): void {
+  for (const listener of listeners) {
+    listener();
+  }
 }
