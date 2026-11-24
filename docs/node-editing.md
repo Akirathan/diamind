@@ -44,10 +44,17 @@
 ## Indent lines
 
 - Indent lines are always visible, just like in Workflowy
+  - The line of a node starts below its whole text (also when the text wraps to more lines) and ends at its last visible descendant.
+  - The local root has no indent line.
 - A node with some children has an arrow displayed to the left of the bullet point with which you can expand or collapse the children
+  - The arrow is always visible, not only on hover.
+  - A collapsed node has a ring around the bullet.
+  - If the cursor is inside the subtree that collapses, it moves to the end of the text of the collapsed node.
 - Hovering over the end of the indent line reveals a plus icon.
   - Clicking on the plus icon will add a node to the end of the indent line.
   - A newly created node is always of a bullet format.
 - The _current indent line_ is highlighted.
   - The current indent line is the one that belongs to the parent node of the current node.
+    - If the parent is the local root, no line is highlighted.
   - The current node is the one where the cursor is located.
+    - It stays current when the focus leaves the outline (e.g. to another window), until another node gets the cursor.
