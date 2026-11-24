@@ -4,7 +4,7 @@ import {
   type ChangeBatch,
   type ChangeSet,
 } from "@/shared/outline/change-set";
-import { testNode } from "@/renderer/src/outline/test-outline";
+import { testNode } from "@/renderer/src/outline/fixtures/test-outline";
 import { FakeTimer, settle } from "@/renderer/src/persistence/fake-timer";
 import {
   FLUSH_DELAY_MS,

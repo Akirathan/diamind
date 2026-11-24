@@ -100,6 +100,19 @@ test("text typed into a node survives editor reuse", async () => {
   ).toBeVisible();
 });
 
+test("text uses the same font as the rest of the app", async () => {
+  launched = await launchApp();
+  const window = await launched.app.firstWindow();
+  const bodyFont = await window
+    .locator("body")
+    .evaluate((body) => getComputedStyle(body).fontFamily);
+  expect(bodyFont).not.toContain("mono");
+  await expect(window.locator(".cm-content")).toHaveCSS(
+    "font-family",
+    bodyFont,
+  );
+});
+
 for (const { colorScheme, caretColor } of [
   { colorScheme: "light", caretColor: "rgb(0, 0, 0)" },
   { colorScheme: "dark", caretColor: "rgb(255, 255, 255)" },

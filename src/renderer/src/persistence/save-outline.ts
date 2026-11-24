@@ -1,6 +1,6 @@
 import type { DiamindApi } from "@/shared/api";
 import type { ChangeSet } from "@/shared/outline/change-set";
-import type { OutlineStore } from "@/renderer/src/outline/store";
+import type { OutlineStore } from "@/renderer/src/outline/store/store";
 import {
   WriteQueue,
   type WriteQueueOptions,

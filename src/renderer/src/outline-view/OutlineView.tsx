@@ -7,14 +7,14 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import { keepCurrentRow } from "@/renderer/src/outline-view/kept-row";
-import { OutlineRowView } from "@/renderer/src/outline-view/OutlineRowView";
-import { revealCursor } from "@/renderer/src/outline-view/reveal-cursor";
+import { keepCurrentRow } from "@/renderer/src/outline-view/rows/kept-row";
+import { OutlineRowView } from "@/renderer/src/outline-view/rows/OutlineRowView";
+import { revealCursor } from "@/renderer/src/outline-view/focus/reveal-cursor";
 import {
   ensureVisibleNode,
   type OutlineSession,
 } from "@/renderer/src/outline-view/session";
-import { useUndoKeys } from "@/renderer/src/outline-view/undo-keys";
+import { useUndoKeys } from "@/renderer/src/outline-view/editing/undo-keys";
 
 const ESTIMATED_ROW_HEIGHT = 24;
 const OVERSCAN = 10;

@@ -15,11 +15,12 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p src/renderer/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "electron-vite build && playwright test",
+    "test:e2e": "install-electron && electron-vite build && playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run format:check && npm run typecheck && npm test && npm run test:e2e",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "bench:startup": "tsx scripts/bench-startup-read.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
@@ -36,6 +37,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "tailwindcss": "4.3.5",
+    "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.1"

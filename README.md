@@ -31,7 +31,7 @@ npm run check        # format check, typecheck, unit tests, e2e tests
 
 - The schema is in `src/main/db/schema.ts`. After a change, run `npm run db:generate` and commit the new files in `src/main/db/migrations/`. The app applies them at startup.
 - `better-sqlite3` ships prebuilt [Node-API](https://nodejs.org/api/n-api.html) binaries. Node-API is ABI-stable, so the same binary loads in Electron and in plain Node (vitest). No rebuild for Electron is necessary.
-- `npx tsx scripts/bench-startup-read.ts <count>` measures the startup read of `<count>` generated nodes.
+- `npm run bench:startup -- <count>` measures the startup read of `<count>` generated nodes.
 
 ### Environment variables
 

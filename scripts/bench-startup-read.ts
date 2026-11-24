@@ -1,5 +1,5 @@
 // Measures the startup read of generated nodes.
-// Usage: npx tsx scripts/bench-startup-read.ts <count> [dataDir]
+// Usage: npm run bench:startup -- <count> [dataDir]
 // With `dataDir`, the database is kept there, e.g. to start the app with it.
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
