@@ -416,3 +416,16 @@ test("undo scrolls to a node that is not rendered", async () => {
   await page.keyboard.press("ArrowDown");
   await expectCursor(page, "|Node 5");
 });
+
+test("undo of a collapse moves the cursor back into the subtree", async () => {
+  const page = await launch(6);
+  await putCursor(page, "seed-3", 4);
+  const row = page.locator('[data-node-id="seed-2"]');
+  await row.getByRole("button", { name: "Show children" }).click();
+  await expectCursor(page, "Node 2|");
+  await page.keyboard.press(UNDO);
+  await expectOutline(page, SEED);
+  await expectCursor(page, "Node| 3");
+  await page.keyboard.press(REDO);
+  await expectCursor(page, "Node 2|");
+});

@@ -58,6 +58,18 @@ describe("flattenVisible", () => {
     ]);
   });
 
+  it("knows which rows have children and which are collapsed", () => {
+    const { store } = createOutline(SOURCE);
+    store.setCollapsed("a", true);
+    store.setCollapsed("c", true);
+    expect(flattenVisible(store, ROOT)).toEqual([
+      { id: "a", depth: 0, hasChildren: true, collapsed: true },
+      { id: "b", depth: 0, hasChildren: true, collapsed: false },
+      { id: "b1", depth: 1, hasChildren: false, collapsed: false },
+      { id: "c", depth: 0, hasChildren: false, collapsed: false },
+    ]);
+  });
+
   it("starts the depth at 0 below the given root", () => {
     const { store } = createOutline(SOURCE);
     expect(rowsText(flattenVisible(store, "a"))).toEqual([

@@ -5,6 +5,14 @@ export interface OutlineRow {
   readonly id: string;
   /** 0 for the children of the local root. */
   readonly depth: number;
+  readonly hasChildren: boolean;
+  /** Always false for a row without children. */
+  readonly collapsed: boolean;
+}
+
+interface PendingRow {
+  id: string;
+  depth: number;
 }
 
 /** The visible descendants of `rootId` in document order. Children of collapsed nodes are skipped. */
@@ -13,13 +21,15 @@ export function flattenVisible(
   rootId: string,
 ): OutlineRow[] {
   const rows: OutlineRow[] = [];
-  const stack: OutlineRow[] = [];
+  const stack: PendingRow[] = [];
   pushChildren(store, rootId, 0, stack);
   while (stack.length > 0) {
-    const row = stack.pop() as OutlineRow;
-    rows.push(row);
-    if (store.getUiState(row.id)?.collapsed !== true) {
-      pushChildren(store, row.id, row.depth + 1, stack);
+    const { id, depth } = stack.pop() as PendingRow;
+    const hasChildren = store.getChildren(id).length > 0;
+    const collapsed = hasChildren && store.getUiState(id)?.collapsed === true;
+    rows.push({ id, depth, hasChildren, collapsed });
+    if (!collapsed) {
+      pushChildren(store, id, depth + 1, stack);
     }
   }
   return rows;
@@ -29,7 +39,7 @@ function pushChildren(
   store: OutlineStore,
   parentId: string,
   depth: number,
-  stack: OutlineRow[],
+  stack: PendingRow[],
 ): void {
   const children = store.getChildren(parentId);
   for (let i = children.length - 1; i >= 0; i--) {

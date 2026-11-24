@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cursorAt } from "@/renderer/src/outline/cursor";
-import { keepCursorRow, withIndex } from "@/renderer/src/outline-view/kept-row";
-import { NodeFocus } from "@/renderer/src/outline-view/node-focus";
+import { createOutline } from "@/renderer/src/outline/test-outline";
+import { CurrentNode } from "@/renderer/src/outline-view/current-node";
+import {
+  keepCurrentRow,
+  withIndex,
+} from "@/renderer/src/outline-view/kept-row";
 
 describe("withIndex", () => {
   it("keeps the indexes ascending", () => {
@@ -16,26 +19,24 @@ describe("withIndex", () => {
   });
 });
 
-describe("keepCursorRow", () => {
-  const rows = Array.from({ length: 20 }, (_, i) => ({
-    id: `n${i}`,
-    depth: 0,
-  }));
-  const range = { startIndex: 10, endIndex: 11, overscan: 1, count: 20 };
+describe("keepCurrentRow", () => {
+  const ids = Array.from({ length: 20 }, (_, i) => `n${i}`);
+  const rows = ids.slice(0, 19).map((id) => ({ id }));
+  const range = { startIndex: 10, endIndex: 11, overscan: 1, count: 19 };
 
-  it("adds the row with the cursor", () => {
-    const focus = new NodeFocus();
-    const extract = keepCursorRow(rows, focus);
+  it("adds the row of the current node", () => {
+    const currentNode = new CurrentNode(createOutline(ids.join("\n")).store);
+    const extract = keepCurrentRow(rows, currentNode);
     expect(extract(range)).toEqual([9, 10, 11, 12]);
-    focus.setCursor(cursorAt("n2", 0));
+    currentNode.set("n2");
     expect(extract(range)).toEqual([2, 9, 10, 11, 12]);
-    focus.request(cursorAt("n19", 0));
-    expect(extract(range)).toEqual([9, 10, 11, 12, 19]);
+    currentNode.set("n18");
+    expect(extract(range)).toEqual([9, 10, 11, 12, 18]);
   });
 
-  it("ignores a cursor in a node without a row", () => {
-    const focus = new NodeFocus();
-    focus.setCursor(cursorAt("x", 0));
-    expect(keepCursorRow(rows, focus)(range)).toEqual([9, 10, 11, 12]);
+  it("ignores a current node without a row", () => {
+    const currentNode = new CurrentNode(createOutline(ids.join("\n")).store);
+    currentNode.set("n19");
+    expect(keepCurrentRow(rows, currentNode)(range)).toEqual([9, 10, 11, 12]);
   });
 });

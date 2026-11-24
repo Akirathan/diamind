@@ -1,6 +1,7 @@
 import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import type { NodeCursor } from "@/renderer/src/outline/cursor";
+import { markdownPreview } from "@/renderer/src/markdown/preview";
+import { cursorAt, type NodeCursor } from "@/renderer/src/outline/cursor";
 import { OutlineError } from "@/renderer/src/outline/errors";
 import type { OutlineStore } from "@/renderer/src/outline/store";
 import { editingExtensions } from "@/renderer/src/outline-view/editing-extensions";
@@ -28,6 +29,7 @@ export class NodeEditors {
   private readonly nodeIdByView = new Map<EditorView, string>();
   private readonly viewByNodeId = new Map<string, EditorView>();
   private readonly unsubscribe: () => void;
+  private readonly unsubscribeCurrent: () => void;
   /** The node whose focused editor was unmounted in this tick. */
   private unfocusedId: string | null = null;
 
@@ -38,7 +40,11 @@ export class NodeEditors {
     this.extensions = [
       theme,
       EditorView.lineWrapping,
+      markdownPreview,
       EditorView.updateListener.of((update) => this.onEditorUpdate(update)),
+      EditorView.domEventHandlers({
+        focus: (_event, view) => this.onEditorFocus(view),
+      }),
       editingExtensions(editing, (view) => this.nodeIdByView.get(view)),
     ];
     this.pool = new Pool(
@@ -51,6 +57,9 @@ export class NodeEditors {
         this.syncFromStore(id);
       }
     });
+    this.unsubscribeCurrent = editing.currentNode.subscribe(() =>
+      this.moveFocusToCurrent(),
+    );
   }
 
   get createdCount(): number {
@@ -105,6 +114,7 @@ export class NodeEditors {
 
   dispose(): void {
     this.unsubscribe();
+    this.unsubscribeCurrent();
     for (const view of this.nodeIdByView.keys()) {
       view.destroy();
     }
@@ -136,6 +146,30 @@ export class NodeEditors {
       }
       this.syncFromStore(nodeId);
     }
+  }
+
+  private onEditorFocus(view: EditorView): void {
+    const nodeId = this.nodeIdByView.get(view);
+    if (nodeId !== undefined) {
+      this.editing.currentNode.set(nodeId);
+    }
+  }
+
+  /** The cursor moves out of a subtree that collapses. */
+  private moveFocusToCurrent(): void {
+    const { currentNode, focus } = this.editing;
+    const currentId = currentNode.get();
+    const focused = [...this.nodeIdByView].find(([view]) => view.hasFocus);
+    if (
+      currentId === null ||
+      focused === undefined ||
+      focused[1] === currentId ||
+      focus.cursor !== null
+    ) {
+      return;
+    }
+    const length = this.store.getNode(currentId)?.text.length ?? 0;
+    focus.request(cursorAt(currentId, length));
   }
 
   /** A minimal replacement keeps the cursor of a focused editor in place. */

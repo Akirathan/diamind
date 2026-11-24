@@ -9,12 +9,14 @@ import {
   nextVisible,
   previousVisible,
 } from "@/renderer/src/outline/visible-nodes";
+import { CurrentNode } from "@/renderer/src/outline-view/current-node";
 import { NodeFocus } from "@/renderer/src/outline-view/node-focus";
 
 /** The editing keys. Each edit is one undo step and moves the cursor. */
 export class OutlineEditing {
-  readonly focus = new NodeFocus();
   readonly history: UndoHistory;
+  readonly currentNode: CurrentNode;
+  readonly focus: NodeFocus;
   private readonly context: operations.EditContext;
 
   constructor(store: OutlineStore, rootId: string) {
@@ -25,6 +27,9 @@ export class OutlineEditing {
         restore: (cursor, changes) => this.restoreCursor(cursor, changes),
       },
     });
+    // Follows the store after the history, which needs the cursor before the change.
+    this.currentNode = new CurrentNode(store);
+    this.focus = new NodeFocus(this.currentNode);
   }
 
   enter(nodeId: string, from: number, to: number): void {

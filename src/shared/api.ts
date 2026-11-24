@@ -3,6 +3,7 @@ import type { Node, NodeUiState } from "@/shared/outline/node";
 export const IpcChannel = {
   GetAppInfo: "app:get-info",
   LoadOutline: "outline:load",
+  OpenLink: "link:open",
 } as const;
 
 export interface AppInfo {
@@ -45,4 +46,6 @@ export interface DiamindApi {
   getAppInfo(): Promise<AppInfo>;
   /** Parse the result with `parseOutlineJson`. */
   loadOutline(): Promise<OutlineJson>;
+  /** Opens a http, https or file URL outside of the app. Rejects for any other URL. */
+  openLink(url: string): Promise<void>;
 }

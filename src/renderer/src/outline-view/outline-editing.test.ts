@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cursorAt } from "@/renderer/src/outline/cursor";
+import { cursorAt, type NodeCursor } from "@/renderer/src/outline/cursor";
 import {
   createOutline,
   dump,
@@ -11,13 +11,20 @@ import { OutlineEditing } from "@/renderer/src/outline-view/outline-editing";
 function setup(source: string) {
   const { store } = createOutline(source);
   const editing = new OutlineEditing(store, ROOT);
-  return { store, editing, history: editing.history, focus: editing.focus };
+  const { history, focus } = editing;
+
+  function putCursor(cursor: NodeCursor): void {
+    editing.currentNode.set(cursor.nodeId);
+    focus.setCursor(cursor);
+  }
+
+  return { store, editing, history, focus, putCursor };
 }
 
 describe("edits", () => {
   it("are one undo step each and move the cursor", () => {
-    const { store, editing, history, focus } = setup("abc");
-    focus.setCursor(cursorAt("abc", 1));
+    const { store, editing, history, focus, putCursor } = setup("abc");
+    putCursor(cursorAt("abc", 1));
     editing.enter("abc", 1, 1);
     expect(focus.getRequest()).toEqual(cursorAt("n1", 0));
     editing.indent(cursorAt("n1", 0));
@@ -39,13 +46,13 @@ describe("edits", () => {
   });
 
   it("change nothing and keep the cursor if the store rejects them", () => {
-    const { store, editing, history, focus } = setup(`
+    const { store, editing, history, focus, putCursor } = setup(`
       abc
       ~d
     `);
     const before = snapshot(store);
     const cursor = { nodeId: "abc", anchor: 1, head: 3 };
-    focus.setCursor(cursor);
+    putCursor(cursor);
     editing.enter("abc", 1, 3);
     editing.indent(cursor);
     editing.unindent(cursor);
@@ -93,16 +100,29 @@ describe("moveUp and moveDown", () => {
 
 describe("the cursor after undo", () => {
   it("goes to a changed node if its own node is hidden", () => {
-    const { store, history, focus } = setup(`
+    const { store, history, focus, putCursor } = setup(`
       a
         b
       c
     `);
-    focus.setCursor(cursorAt("b", 1));
+    putCursor(cursorAt("b", 1));
     store.setText("c", "cc");
     history.untracked(() => store.setCollapsed("a", true));
     history.undo();
     expect(focus.getRequest()).toEqual(cursorAt("c", 1));
+  });
+
+  it("goes back into a subtree that collapsed over it", () => {
+    const { store, editing, history, focus, putCursor } = setup(`
+      a
+        b
+    `);
+    putCursor(cursorAt("b", 1));
+    store.setCollapsed("a", true);
+    expect(editing.currentNode.get()).toBe("a");
+    history.undo();
+    expect(focus.getRequest()).toEqual(cursorAt("b", 1));
+    expect(editing.currentNode.get()).toBe("b");
   });
 
   it("stays if no node had the cursor", () => {

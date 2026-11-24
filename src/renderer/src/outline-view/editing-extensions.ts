@@ -143,7 +143,7 @@ function trackCursor(
   if (
     cursor === null ||
     !(docChanged || selectionSet || focusChanged) ||
-    !(view.hasFocus || editing.focus.cursor?.nodeId === cursor.nodeId)
+    editing.currentNode.get() !== cursor.nodeId
   ) {
     return;
   }

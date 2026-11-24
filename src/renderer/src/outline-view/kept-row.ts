@@ -1,6 +1,6 @@
 import { defaultRangeExtractor, type Range } from "@tanstack/react-virtual";
+import type { CurrentNode } from "@/renderer/src/outline-view/current-node";
 import type { OutlineRow } from "@/renderer/src/outline-view/flatten";
-import type { NodeFocus } from "@/renderer/src/outline-view/node-focus";
 
 /** Adds an index to ascending contiguous indexes, if it is not -1. */
 export function withIndex(indexes: number[], index: number): number[] {
@@ -16,17 +16,17 @@ export function withIndex(indexes: number[], index: number): number[] {
   return indexes;
 }
 
-/** Renders the visible rows and the row with the cursor. */
-export function keepCursorRow(
-  rows: readonly OutlineRow[],
-  focus: NodeFocus,
+/** Renders the visible rows and the row of the current node. */
+export function keepCurrentRow(
+  rows: readonly Pick<OutlineRow, "id">[],
+  currentNode: CurrentNode,
 ): (range: Range) => number[] {
   let nodeId: string | null = null;
   let index = -1;
   return (range) => {
-    const cursorNodeId = focus.cursor?.nodeId ?? null;
-    if (cursorNodeId !== nodeId) {
-      nodeId = cursorNodeId;
+    const currentId = currentNode.get();
+    if (currentId !== nodeId) {
+      nodeId = currentId;
       index = rows.findIndex((row) => row.id === nodeId);
     }
     return withIndex(defaultRangeExtractor(range), index);

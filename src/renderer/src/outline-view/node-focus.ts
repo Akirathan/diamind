@@ -1,27 +1,33 @@
 import type { NodeCursor } from "@/renderer/src/outline/cursor";
+import type { CurrentNode } from "@/renderer/src/outline-view/current-node";
 
 /**
- * Knows the node with the cursor, and takes requests to move the cursor.
+ * Knows the cursor in the current node, and takes requests to move it.
  * The outline view fulfills a request, because the row may have to be rendered first.
  */
 export class NodeFocus {
-  private current: NodeCursor | null = null;
+  private lastCursor: NodeCursor | null = null;
   private lastRequest: NodeCursor | null = null;
   private readonly listeners = new Set<() => void>();
 
-  /** The last known cursor. It stays when the window or the editor loses the focus. */
+  constructor(private readonly currentNode: CurrentNode) {}
+
+  /** The last known cursor in the current node. It stays when the window or the editor loses the focus. */
   get cursor(): NodeCursor | null {
-    return this.current;
+    const { lastCursor } = this;
+    return lastCursor?.nodeId === this.currentNode.get() ? lastCursor : null;
   }
 
-  /** Reports a cursor move that already happened in an editor. */
+  /** Reports a cursor move that already happened in the editor of the current node. */
   setCursor(cursor: NodeCursor): void {
-    this.current = cursor;
+    this.lastCursor = cursor;
   }
 
   /** Focuses the node and scrolls the cursor into view. Offsets behind the text are clamped. */
   request(cursor: NodeCursor): void {
-    this.current = cursor;
+    // Before the current node, so that its subscribers see the new cursor.
+    this.lastCursor = cursor;
+    this.currentNode.set(cursor.nodeId);
     // A copy, so that a repeated request of the same cursor is a new one.
     this.lastRequest = { ...cursor };
     for (const listener of this.listeners) {
