@@ -36,7 +36,9 @@ DiaMind
     - typecheck, unit tests, e2e tests and formatting should be done locally so far.
       - `npm run check` runs all of them. See `README.md` for the other scripts.
   - Layout: `src/main` (main process), `src/preload` (IPC bridge), `src/renderer` (React), `src/shared` (types shared by all), `e2e` (Playwright).
-  - `DIAMIND_DATA_DIR` overrides the data directory, e.g. in e2e tests.
+  - In `src`, import with the `@/` alias (= `src/`), e.g. `@/shared/api`. No relative imports.
+  - Environment variables for development and e2e tests: see `README.md`.
+    - e2e tests run with a hidden window. Use `launchApp()` from `e2e/launch.ts`.
 
 ## Docs
 

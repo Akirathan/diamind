@@ -33,7 +33,15 @@ npm run check        # format check, typecheck, unit tests, e2e tests
 - `better-sqlite3` ships prebuilt [Node-API](https://nodejs.org/api/n-api.html) binaries. Node-API is ABI-stable, so the same binary loads in Electron and in plain Node (vitest). No rebuild for Electron is necessary.
 - `npx tsx scripts/bench-startup-read.ts <count>` measures the startup read of `<count>` generated nodes.
 
-Data is stored in `~/.local/share/diamind`. Set `DIAMIND_DATA_DIR` to use another directory.
+### Environment variables
+
+Data is stored in `~/.local/share/diamind`. A packaged app ignores `DIAMIND_SEED_NODES` and `DIAMIND_HIDDEN`.
+
+| Variable             | What it does                                                   |
+| -------------------- | -------------------------------------------------------------- |
+| `DIAMIND_DATA_DIR`   | Use another data directory                                     |
+| `DIAMIND_SEED_NODES` | Start with this number of generated nodes                      |
+| `DIAMIND_HIDDEN`     | `1` hides the window. Default in e2e tests; `0` shows it there |
 
 ## License
 

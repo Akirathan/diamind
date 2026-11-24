@@ -6,6 +6,8 @@
   - One CodeMirror editor per node.
     - Only the visible nodes have an editor (virtual list).
     - Editors are pooled and reused when scrolling, via `view.setState(...)`. The extension list is created once and shared.
+      - The pool keeps at most 50 free editors.
+    - The node with the cursor stays rendered when it is scrolled out of the view, so it keeps the focus and the cursor. #todo implemented in #9.
     - Possible later, if scrolling is not smooth: render static HTML during fast scroll, create editors when the scroll stops.
   - Cursor movement and selection across nodes are handled by DiaMind, not by CodeMirror.
 - Vim key bindings are postponed. Not part of the first version.
