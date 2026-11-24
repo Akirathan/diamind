@@ -7,6 +7,7 @@ export const IpcChannel = {
   SaveChanges: "outline:save",
   FlushRequest: "outline:flush-request",
   FlushDone: "outline:flush-done",
+  OpenLink: "link:open",
 } as const;
 
 export interface AppInfo {
@@ -56,4 +57,6 @@ export interface DiamindApi {
    * closes. Returns a function that removes it.
    */
   onFlushRequest(flush: () => Promise<void>): () => void;
+  /** Opens a http, https or file URL outside of the app. Rejects for any other URL. */
+  openLink(url: string): Promise<void>;
 }

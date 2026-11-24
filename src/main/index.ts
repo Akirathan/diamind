@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, type WebContents } from "electron";
+import { app, BrowserWindow, ipcMain, shell, type WebContents } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { IpcChannel, type AppInfo, type Json } from "@/shared/api";
@@ -6,6 +6,7 @@ import type { ChangeBatch } from "@/shared/outline/change-set";
 import { openDatabase, type Db } from "@/main/db/database";
 import { applyChangeSet, loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
+import { openLink } from "@/main/open-link";
 import { resolveDataDir } from "@/main/paths";
 import { saveBeforeClose } from "@/main/save-before-close";
 
@@ -80,6 +81,9 @@ function registerIpc(db: Db): void {
     (_event, batch: Json<ChangeBatch>): void => {
       applyChangeSet(db, JSON.parse(batch) as ChangeBatch);
     },
+  );
+  ipcMain.handle(IpcChannel.OpenLink, (_event, url: unknown) =>
+    openLink(url, shell),
   );
 }
 

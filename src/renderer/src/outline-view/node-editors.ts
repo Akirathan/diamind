@@ -1,19 +1,25 @@
-import { Annotation, EditorState, type Extension } from "@codemirror/state";
+import { EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
+import { markdownPreview } from "@/renderer/src/markdown/preview";
+import { cursorAt, type NodeCursor } from "@/renderer/src/outline/cursor";
+import { OutlineError } from "@/renderer/src/outline/errors";
 import type { OutlineStore } from "@/renderer/src/outline/store";
+import { editingExtensions } from "@/renderer/src/outline-view/editing-extensions";
+import { fromStore } from "@/renderer/src/outline-view/from-store";
+import type { OutlineEditing } from "@/renderer/src/outline-view/outline-editing";
 import { Pool } from "@/renderer/src/outline-view/pool";
 import { textChange } from "@/renderer/src/outline-view/text-change";
 
 const MAX_FREE_EDITORS = 50;
-
-/** Marks a transaction that copies a store change into the editor. */
-const fromStore = Annotation.define<boolean>();
 
 const theme = EditorView.theme({
   "&.cm-focused": { outline: "none" },
   ".cm-scroller": { lineHeight: "inherit" },
   ".cm-content": { padding: "0" },
   ".cm-line": { padding: "0" },
+  "@media (prefers-color-scheme: dark)": {
+    ".cm-content": { caretColor: "white" },
+  },
 });
 
 /**
@@ -26,12 +32,23 @@ export class NodeEditors {
   private readonly nodeIdByView = new Map<EditorView, string>();
   private readonly viewByNodeId = new Map<string, EditorView>();
   private readonly unsubscribe: () => void;
+  private readonly unsubscribeCurrent: () => void;
+  /** The node whose focused editor was unmounted in this tick. */
+  private unfocusedId: string | null = null;
 
-  constructor(private readonly store: OutlineStore) {
+  constructor(
+    private readonly store: OutlineStore,
+    private readonly editing: OutlineEditing,
+  ) {
     this.extensions = [
       theme,
       EditorView.lineWrapping,
+      markdownPreview,
       EditorView.updateListener.of((update) => this.onEditorUpdate(update)),
+      EditorView.domEventHandlers({
+        focus: (_event, view) => this.onEditorFocus(view),
+      }),
+      editingExtensions(editing, (view) => this.nodeIdByView.get(view)),
     ];
     this.pool = new Pool(
       () => new EditorView({ state: this.createState("") }),
@@ -43,6 +60,9 @@ export class NodeEditors {
         this.syncFromStore(id);
       }
     });
+    this.unsubscribeCurrent = editing.currentNode.subscribe(() =>
+      this.moveFocusToCurrent(),
+    );
   }
 
   get createdCount(): number {
@@ -55,6 +75,27 @@ export class NodeEditors {
     this.nodeIdByView.set(view, nodeId);
     this.viewByNodeId.set(nodeId, view);
     parent.appendChild(view.dom);
+    const { cursor } = this.editing.focus;
+    if (this.unfocusedId === nodeId && cursor?.nodeId === nodeId) {
+      this.focus(cursor);
+    }
+    return view;
+  }
+
+  /** Returns the editor, or `null` if the node has none. */
+  focus({ nodeId, anchor, head }: NodeCursor): EditorView | null {
+    const view = this.viewByNodeId.get(nodeId);
+    if (view === undefined) {
+      return null;
+    }
+    const { length } = view.state.doc;
+    view.dispatch({
+      selection: {
+        anchor: Math.min(anchor, length),
+        head: Math.min(head, length),
+      },
+    });
+    view.focus();
     return view;
   }
 
@@ -63,8 +104,12 @@ export class NodeEditors {
       this.viewByNodeId.delete(nodeId);
     }
     this.nodeIdByView.delete(view);
-    if (view.hasFocus) {
+    if (document.activeElement === view.contentDOM) {
       view.contentDOM.blur();
+      this.unfocusedId = nodeId;
+      queueMicrotask(() => {
+        this.unfocusedId = null;
+      });
     }
     view.dom.remove();
     this.pool.release(view);
@@ -72,6 +117,7 @@ export class NodeEditors {
 
   dispose(): void {
     this.unsubscribe();
+    this.unsubscribeCurrent();
     for (const view of this.nodeIdByView.keys()) {
       view.destroy();
     }
@@ -92,9 +138,41 @@ export class NodeEditors {
       return;
     }
     const nodeId = this.nodeIdByView.get(update.view);
-    if (nodeId !== undefined) {
-      this.store.setText(nodeId, update.state.doc.toString());
+    if (nodeId === undefined) {
+      return;
     }
+    try {
+      this.store.setText(nodeId, update.state.doc.toString());
+    } catch (error) {
+      if (!(error instanceof OutlineError)) {
+        throw error;
+      }
+      this.syncFromStore(nodeId);
+    }
+  }
+
+  private onEditorFocus(view: EditorView): void {
+    const nodeId = this.nodeIdByView.get(view);
+    if (nodeId !== undefined) {
+      this.editing.currentNode.set(nodeId);
+    }
+  }
+
+  /** The cursor moves out of a subtree that collapses. */
+  private moveFocusToCurrent(): void {
+    const { currentNode, focus } = this.editing;
+    const currentId = currentNode.get();
+    const focused = [...this.nodeIdByView].find(([view]) => view.hasFocus);
+    if (
+      currentId === null ||
+      focused === undefined ||
+      focused[1] === currentId ||
+      focus.cursor !== null
+    ) {
+      return;
+    }
+    const length = this.store.getNode(currentId)?.text.length ?? 0;
+    focus.request(cursorAt(currentId, length));
   }
 
   /** A minimal replacement keeps the cursor of a focused editor in place. */

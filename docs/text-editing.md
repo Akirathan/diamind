@@ -7,12 +7,24 @@
     - Only the visible nodes have an editor (virtual list).
     - Editors are pooled and reused when scrolling, via `view.setState(...)`. The extension list is created once and shared.
       - The pool keeps at most 50 free editors.
-    - The node with the cursor stays rendered when it is scrolled out of the view, so it keeps the focus and the cursor. #todo implemented in #9.
+    - The node with the cursor stays rendered when it is scrolled out of the view, so it keeps the focus and the cursor.
     - Possible later, if scrolling is not smooth: render static HTML during fast scroll, create editors when the scroll stops.
   - Cursor movement and selection across nodes are handled by DiaMind, not by CodeMirror.
 - Vim key bindings are postponed. Not part of the first version.
 - Unlike Workflowy, the text editing should resemble Obsidian - formatting is done via WISIWYG markdown. For example, when a cursor is in the bold text (text surrounded by `**` ), the star literals should be visible, otherwise, only a bold text should be visible.
+  - Nested formatting is decided one by one. For example, with the cursor in the bold but not in the italic part of `**a _b_ c**` , only `**` is visible.
+  - A backslash that prevents formatting, e.g. in `\*` , stays visible and is dimmed.
+  - Images, strikethrough, HTML tags and reference links (`[a][b]` ) are plain text with syntax highlight.
+    - Later, images will have an embedded preview.
 - Note that in workflowy, when you select text, the formatting popup bar is displayed next to the text - I don't want that.
 - Links
-  - `file://` links are opened via system's `open` . So that I can, e.g., click on `file:///Users/pavel` and that will open finder in my home directory.
+  - A link is opened only with `Cmd + Click` . A plain click moves the cursor into the link.
+    - While `Cmd` is pressed, the mouse cursor over a link is a pointer.
+  - `file://` links are opened via system's `open` . So that I can, e.g., `Cmd + Click` on `file:///Users/pavel` and that will open finder in my home directory.
+    - Apps and executable files can be opened too. Everything on this machine is safe to execute.
   - `http://` and `https://` links are opened via system's browser.
+  - Invalid links (any other URL, e.g. `www.example.com` or `mailto:` ) look the same as valid links.
+    - `Cmd + Click` on an invalid link, or on a link that cannot be opened (e.g. a missing file), does nothing. It only logs an error to the console.
+  - Text that is not correct markdown link syntax is plain text, e.g. `[a](b c)` . A URL with spaces needs `<>` or `%20` .
+    - A link with an empty label, e.g. `[](https://example.com)` , is plain text too. Otherwise, nothing of it would be visible.
+    - Known limit: a link with brackets in its label, e.g. `[a [b] c](https://example.com)` , is not recognized as a link.

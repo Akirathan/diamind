@@ -20,6 +20,7 @@ const api: DiamindApi = {
       }
     };
   },
+  openLink: (url) => ipcRenderer.invoke(IpcChannel.OpenLink, url),
 };
 
 contextBridge.exposeInMainWorld("diamind", api);

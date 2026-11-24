@@ -514,3 +514,157 @@ describe("empty tail with dividers", () => {
     expect(store.getChildren(ROOT)).toEqual(["a", "d", "n1"]);
   });
 });
+
+describe("moveChildren", () => {
+  it("appends the children in their order and keeps the node", () => {
+    const { store } = createOutline(`
+      a
+        a1
+      b
+        b1
+          b11
+        b2
+    `);
+    store.moveChildren("b", "a");
+    expect(dump(store)).toBe(
+      outline(`
+        a
+          a1
+          b1
+            b11
+          b2
+        b
+      `),
+    );
+  });
+
+  it("changes nothing without children", () => {
+    const { store } = createOutline(`
+      a
+      b
+    `);
+    expect(store.moveChildren("a", "b").nodes.upsert).toEqual([]);
+  });
+
+  it("rejects an empty tail, unknown nodes and its own subtree", () => {
+    const { store } = createOutline(`
+      a
+        ~a1
+      b
+        ~b1
+    `);
+    expectRejected(store, () => store.moveChildren("b", "a"), "emptyTail");
+    expectRejected(store, () => store.moveChildren("x", "a"), "nodeNotFound");
+    expectRejected(store, () => store.moveChildren("a", "x"), "nodeNotFound");
+    expectRejected(store, () => store.moveChildren("a", "a1"), "moveIntoSelf");
+  });
+});
+
+describe("dissolveNode", () => {
+  it("appends the children to the new parent and deletes the node", () => {
+    const { store, clock } = createOutline(`
+      a
+        a1
+      b
+        b1
+          b11
+        b2
+      c
+    `);
+    store.setCollapsed("b", true);
+    clock.now = 3000;
+    const changes = store.dissolveNode("b", "a");
+    expect(dump(store)).toBe(
+      outline(`
+        a
+          a1
+          b1
+            b11
+          b2
+        c
+      `),
+    );
+    expect(changes.nodes.delete).toEqual(["b"]);
+    expect(changes.nodes.upsert.map((n) => n.id)).toEqual(["b1", "b2"]);
+    expect(changes.uiState.delete).toEqual(["b"]);
+    expect(node(store, "b1").modifiedAt).toBe(3000);
+    expect(node(store, "b11").modifiedAt).toBe(CREATED_AT);
+  });
+
+  it("appends to the parent of the node", () => {
+    const { store } = createOutline(`
+      a
+        b
+          c
+        d
+    `);
+    store.dissolveNode("b", "a");
+    expect(dump(store)).toBe(
+      outline(`
+        a
+          d
+          c
+      `),
+    );
+  });
+
+  it("checks only the final children against the empty rule", () => {
+    const { store } = createOutline(`
+      a
+        ~a1
+      b
+        ~b1
+        c
+    `);
+    store.dissolveNode("b", "a");
+    expect(store.getChildren("a")).toEqual(["a1", "b1", "c"]);
+  });
+
+  it("accepts two empty nodes that already were at the end", () => {
+    const { store } = createOutline(`
+      a
+      b
+        ~b1
+        ~b2
+        c
+    `);
+    store.deleteNode("c");
+    store.dissolveNode("b", "a");
+    expect(store.getChildren("a")).toEqual(["b1", "b2"]);
+  });
+
+  it("does not count the deleted node in the empty rule", () => {
+    const { store } = createOutline(`
+      a
+        ~b
+          ~c
+    `);
+    store.dissolveNode("b", "a");
+    expect(store.getChildren("a")).toEqual(["c"]);
+  });
+
+  it("rejects two empty nodes at the end of the new parent", () => {
+    const { store } = createOutline(`
+      a
+        ~a1
+      b
+        ~b1
+    `);
+    expectRejected(store, () => store.dissolveNode("b", "a"), "emptyTail");
+  });
+
+  it("rejects the root, unknown nodes and its own subtree", () => {
+    const { store } = createOutline(`
+      a
+        b
+    `);
+    expectRejected(
+      store,
+      () => store.dissolveNode(ROOT, "a"),
+      "rootNotAllowed",
+    );
+    expectRejected(store, () => store.dissolveNode("x", "a"), "nodeNotFound");
+    expectRejected(store, () => store.dissolveNode("a", "x"), "nodeNotFound");
+    expectRejected(store, () => store.dissolveNode("a", "b"), "moveIntoSelf");
+  });
+});
