@@ -126,6 +126,47 @@ export function deleteNode(model: OutlineModel, id: string): ChangeSet {
   });
 }
 
+/**
+ * Deletes the node, but appends its children to the children of `newParentId`.
+ * The empty tail rule applies to the final children of `newParentId`.
+ */
+export function dissolveNode(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): ChangeSet {
+  model.getNode(id);
+  model.getNode(newParentId);
+  model.checkNotRoot(id, "deleted");
+  if (model.isInSubtree(newParentId, id)) {
+    throw new OutlineError(
+      "moveIntoSelf",
+      "Children cannot be moved into the subtree of their parent",
+    );
+  }
+  const moved = [...model.childIds(id)];
+  const siblings = model.childIds(newParentId).filter((s) => s !== id);
+  if (moved.length > 0) {
+    checkEmptyTail(model.childIds(newParentId), [...siblings, ...moved], (s) =>
+      isEmptyNode(model.getNode(s)),
+    );
+  }
+
+  const now = model.now();
+  return model.record(() => {
+    for (const childId of moved) {
+      const last = model.childIds(newParentId).at(-1) ?? null;
+      model.putNode({
+        ...model.getNode(childId),
+        parentId: newParentId,
+        sortKey: model.sortKeyAfter(newParentId, last),
+        modifiedAt: now,
+      });
+    }
+    model.removeNode(id);
+  });
+}
+
 function relocate(
   model: OutlineModel,
   node: Node,
