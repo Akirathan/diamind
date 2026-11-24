@@ -1,53 +1,20 @@
+import type { Extension } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import {
-  ViewPlugin,
-  type DecorationSet,
-  type EditorView,
-  type PluginValue,
-  type ViewUpdate,
-} from "@codemirror/view";
-import {
-  buildDecorations,
   LINK_URL_ATTRIBUTE,
   RENDERED_LINK_ROLE,
 } from "@/renderer/src/markdown/decorations";
 import {
-  parseInlineMarkdown,
-  type InlineSpan,
-} from "@/renderer/src/markdown/inline-markdown";
+  previewField,
+  previewState,
+  setFocused,
+  setMouseDown,
+} from "@/renderer/src/markdown/preview-state";
 
-class MarkdownPreview implements PluginValue {
-  decorations: DecorationSet;
-  private spans: readonly InlineSpan[];
-  private mouseDown = false;
-  private stale = false;
-
-  constructor(private readonly view: EditorView) {
-    this.spans = parseInlineMarkdown(view.state.doc.toString());
-    this.decorations = this.build();
-  }
-
-  update(update: ViewUpdate): void {
-    if (update.docChanged) {
-      this.spans = parseInlineMarkdown(update.state.doc.toString());
-      this.decorations = this.build();
-      return;
-    }
-    if (this.spans.length === 0) {
-      return;
-    }
-    if (update.selectionSet || update.focusChanged) {
-      this.stale = true;
-    }
-    if (this.stale && !this.mouseDown) {
-      this.decorations = this.build();
-    }
-  }
-
-  destroy(): void {
-    this.setMouseDown(false);
-  }
-
-  onMouseDown(event: MouseEvent): boolean {
+const handlers = EditorView.domEventHandlers({
+  focus: (_event, view) => updateFocus(view, true),
+  blur: (_event, view) => updateFocus(view, false),
+  mousedown(event, view) {
     if (event.button !== 0) {
       return false;
     }
@@ -55,11 +22,12 @@ class MarkdownPreview implements PluginValue {
       // Keeps the cursor where it is, so the link stays rendered.
       return true;
     }
-    this.setMouseDown(true);
+    if (view.state.field(previewField).spans.length > 0) {
+      trackMouse(view);
+    }
     return false;
-  }
-
-  onClick(event: MouseEvent): boolean {
+  },
+  click(event) {
     const url = linkToOpen(event);
     if (url === null) {
       return false;
@@ -71,35 +39,32 @@ class MarkdownPreview implements PluginValue {
       });
     }
     return true;
-  }
+  },
+});
 
-  private build(): DecorationSet {
-    this.stale = false;
-    const { view } = this;
-    return buildDecorations(
-      this.spans,
-      view.hasFocus ? view.state.selection.ranges : [],
+/** The view cannot be changed yet if the focus moved during its update. */
+function updateFocus(view: EditorView, focused: boolean): false {
+  queueMicrotask(() => {
+    if (view.state.field(previewField).focused !== focused) {
+      view.dispatch({ effects: setFocused.of(focused) });
+    }
+  });
+  return false;
+}
+
+function trackMouse(view: EditorView): void {
+  view.dispatch({ effects: setMouseDown.of(true) });
+  const controller = new AbortController();
+  for (const type of ["mouseup", "dragend"]) {
+    window.addEventListener(
+      type,
+      () => {
+        controller.abort();
+        view.dispatch({ effects: setMouseDown.of(false) });
+      },
+      { signal: controller.signal },
     );
   }
-
-  /** Markers that appear under a pressed mouse would move the text, and the mouse would select it. */
-  private setMouseDown(mouseDown: boolean): void {
-    this.mouseDown = mouseDown;
-    for (const type of ["mouseup", "dragend"]) {
-      if (mouseDown) {
-        window.addEventListener(type, this.onMouseUp);
-      } else {
-        window.removeEventListener(type, this.onMouseUp);
-      }
-    }
-  }
-
-  private readonly onMouseUp = (): void => {
-    this.setMouseDown(false);
-    if (this.stale) {
-      this.view.dispatch({});
-    }
-  };
 }
 
 /** A link with the cursor inside is open for editing, so it needs `Cmd` or `Ctrl` to be opened. */
@@ -118,14 +83,4 @@ function linkToOpen(event: MouseEvent): string | null {
 }
 
 /** Shows inline markdown formatted and without its markers, except around the cursor. */
-export const markdownPreview = ViewPlugin.fromClass(MarkdownPreview, {
-  decorations: (preview) => preview.decorations,
-  eventHandlers: {
-    mousedown(event) {
-      return this.onMouseDown(event);
-    },
-    click(event) {
-      return this.onClick(event);
-    },
-  },
-});
+export const markdownPreview: Extension = [previewState, handlers];

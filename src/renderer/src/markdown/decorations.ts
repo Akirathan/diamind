@@ -1,8 +1,9 @@
 import type { Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
-import type {
-  InlineSpan,
-  TextRange,
+import {
+  touchesSpan,
+  type InlineSpan,
+  type TextRange,
 } from "@/renderer/src/markdown/inline-markdown";
 
 /** On links that a plain click opens. */
@@ -22,16 +23,6 @@ const styles = {
       "rounded-sm bg-neutral-200 px-1 font-mono text-[0.9em] leading-none dark:bg-neutral-700",
   }),
 };
-
-/** True if the cursor or a selection is inside of the span or at its boundary. */
-export function touchesSpan(
-  span: TextRange,
-  selection: readonly TextRange[],
-): boolean {
-  return selection.some(
-    (range) => range.from <= span.to && range.to >= span.from,
-  );
-}
 
 /** `selection` is empty for an editor without focus. */
 export function buildDecorations(

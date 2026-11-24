@@ -56,6 +56,16 @@ export function parseInlineMarkdown(text: string): InlineSpan[] {
   return spans;
 }
 
+/** True if the cursor or a selection is inside of the span or at its boundary. */
+export function touchesSpan(
+  span: TextRange,
+  selection: readonly TextRange[],
+): boolean {
+  return selection.some(
+    (range) => range.from <= span.to && range.to >= span.from,
+  );
+}
+
 function parseLine(line: string, offset: number, spans: InlineSpan[]): void {
   let linkEnd = 0;
 
