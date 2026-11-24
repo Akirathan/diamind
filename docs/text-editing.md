@@ -25,3 +25,6 @@
   - `http://` and `https://` links are opened via system's browser.
   - Invalid links (any other URL, e.g. `www.example.com` or `mailto:` ) look the same as valid links.
     - `Cmd + Click` on an invalid link, or on a link that cannot be opened (e.g. a missing file), does nothing. It only logs an error to the console.
+  - Text that is not correct markdown link syntax is plain text, e.g. `[a](b c)` . A URL with spaces needs `<>` or `%20` .
+    - A link with an empty label, e.g. `[](https://example.com)` , is plain text too. Otherwise, nothing of it would be visible.
+    - Known limit: a link with brackets in its label, e.g. `[a [b] c](https://example.com)` , is not recognized as a link.
