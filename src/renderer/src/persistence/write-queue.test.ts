@@ -9,6 +9,7 @@ import { FakeTimer, settle } from "@/renderer/src/persistence/fake-timer";
 import {
   FLUSH_DELAY_MS,
   MAX_RETRY_DELAY_MS,
+  MAX_WAIT_MS,
   RETRY_DELAY_MS,
   WriteQueue,
 } from "@/renderer/src/persistence/write-queue";
@@ -150,6 +151,40 @@ describe("delay", () => {
     expect(saves).toHaveLength(0);
     await timer.advance(1);
     expect(nodeChanges(saves[0])).toEqual(["+a=2"]);
+  });
+
+  it("saves after the maximum wait if there is no pause", async () => {
+    const stepMs = FLUSH_DELAY_MS / 3;
+    for (let ms = 0; ms < MAX_WAIT_MS; ms += stepMs) {
+      expect(saves).toHaveLength(0);
+      queue.add(upsert("a", String(ms)));
+      await timer.advance(stepMs);
+    }
+    expect(saves).toHaveLength(1);
+    expect(nodeChanges(saves[0])).toEqual([`+a=${MAX_WAIT_MS - stepMs}`]);
+    expect(timer.scheduledCount).toBe(0);
+  });
+
+  it("starts the maximum wait again after a save", async () => {
+    queue.add(upsert("a"));
+    await timer.advance(FLUSH_DELAY_MS);
+    await finish(saves[0]);
+    await timer.advance(MAX_WAIT_MS);
+    queue.add(upsert("a"));
+    await timer.advance(FLUSH_DELAY_MS - 1);
+    expect(saves).toHaveLength(1);
+  });
+
+  it("saves changes made without a pause during a save right after it", async () => {
+    queue.add(upsert("a"));
+    void queue.flush();
+    for (let ms = 0; ms < MAX_WAIT_MS; ms += 100) {
+      queue.add(upsert("a", String(ms)));
+      await timer.advance(100);
+    }
+    expect(saves).toHaveLength(1);
+    await finish(saves[0]);
+    expect(saves).toHaveLength(2);
   });
 
   it("ignores an empty change set", () => {

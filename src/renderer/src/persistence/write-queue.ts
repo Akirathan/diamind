@@ -6,6 +6,8 @@ import {
 import type { Node, NodeUiState } from "@/shared/outline/node";
 
 export const FLUSH_DELAY_MS = 300;
+/** Limits the wait while changes come without a pause. */
+export const MAX_WAIT_MS = 2000;
 export const RETRY_DELAY_MS = 1000;
 export const MAX_RETRY_DELAY_MS = 30_000;
 
@@ -43,6 +45,7 @@ export class WriteQueue {
   private saving: QueuedRows | null = null;
   private saveAgain = false;
   private cancelTimer: (() => void) | null = null;
+  private cancelMaxWait: (() => void) | null = null;
   private retryDelayMs = RETRY_DELAY_MS;
   private idleListeners: (() => void)[] = [];
 
@@ -73,6 +76,10 @@ export class WriteQueue {
       this.pending.uiState.set(id, null);
     }
     this.startTimer(FLUSH_DELAY_MS);
+    this.cancelMaxWait ??= this.timer.schedule(
+      () => this.startSave(),
+      MAX_WAIT_MS,
+    );
   }
 
   /** Saves now. Resolves when no change is unsaved, also after failed saves. */
@@ -89,10 +96,7 @@ export class WriteQueue {
 
   private startTimer(delayMs: number): void {
     this.stopTimer();
-    this.cancelTimer = this.timer.schedule(() => {
-      this.cancelTimer = null;
-      this.startSave();
-    }, delayMs);
+    this.cancelTimer = this.timer.schedule(() => this.startSave(), delayMs);
   }
 
   private stopTimer(): void {
@@ -102,6 +106,8 @@ export class WriteQueue {
 
   private startSave(): void {
     this.stopTimer();
+    this.cancelMaxWait?.();
+    this.cancelMaxWait = null;
     if (this.saving !== null) {
       this.saveAgain = !isEmpty(this.pending);
       return;
