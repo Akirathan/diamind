@@ -7,6 +7,7 @@ import {
   changesRows,
   flattenVisible,
   OutlineRowsSource,
+  outlineRows,
 } from "@/renderer/src/outline-view/rows/flatten";
 import { LocalRoot } from "@/renderer/src/outline-view/zoom/local-root";
 
@@ -95,6 +96,13 @@ describe("changesRows", () => {
     expect(changesRows(store.setText("a", "x"))).toBe(false);
   });
 
+  it("is false for a scroll", () => {
+    const { store } = createOutline(SOURCE);
+    expect(changesRows(store.setScrollTop("a", 10))).toBe(false);
+    store.setCollapsed("a", true);
+    expect(changesRows(store.setScrollTop("a", 20))).toBe(false);
+  });
+
   it("is true for structure and collapse changes", () => {
     const { store } = createOutline(SOURCE);
     expect(changesRows(store.indent("b"))).toBe(true);
@@ -104,7 +112,45 @@ describe("changesRows", () => {
   });
 });
 
+describe("outlineRows", () => {
+  it("start with the local root as the title", () => {
+    const { store } = createOutline(SOURCE);
+    store.setCollapsed("a", true);
+    const [title, ...rows] = outlineRows(store, "a");
+    expect(title).toEqual({
+      id: "a",
+      depth: 0,
+      hasChildren: true,
+      collapsed: false,
+      isTitle: true,
+    });
+    expect(rows).toEqual(flattenVisible(store, "a"));
+  });
+
+  it("have no title in the global root", () => {
+    const { store } = createOutline(SOURCE);
+    expect(outlineRows(store, ROOT)).toEqual(flattenVisible(store, ROOT));
+  });
+});
+
 describe("OutlineRowsSource", () => {
+  it("follows the local root", async () => {
+    const { store } = createOutline(SOURCE);
+    const localRoot = new LocalRoot(ROOT);
+    const source = new OutlineRowsSource(store, localRoot);
+    let notified = 0;
+    source.subscribe(() => notified++);
+    localRoot.set("a");
+    expect(rowsText(source.getRows())).toEqual([
+      "0:a",
+      "0:a1",
+      "1:a11",
+      "0:a2",
+    ]);
+    await Promise.resolve();
+    expect(notified).toBe(1);
+  });
+
   it("recomputes the rows and notifies only on a structure change", async () => {
     const { store } = createOutline(SOURCE);
     const source = new OutlineRowsSource(store, new LocalRoot(ROOT));

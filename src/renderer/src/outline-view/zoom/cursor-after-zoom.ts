@@ -9,24 +9,25 @@ import {
 } from "@/renderer/src/outline/editing/visible-nodes";
 import type { OutlineStore } from "@/renderer/src/outline/store/store";
 
-/** `cursor` is the one before the zoom. It stays if its node is still visible. */
+/** `cursor` is the one before the zoom. */
 export function cursorAfterZoom(
   store: OutlineStore,
   rootId: string,
   previousRootId: string,
   cursor: NodeCursor | null,
 ): NodeCursor | null {
+  const children = store.getChildren(rootId);
+  const first = store.getNode(children[0]);
+  if (first !== undefined && children.length === 1 && isEmptyNode(first)) {
+    return cursorAt(first.id, 0);
+  }
   if (cursor !== null && isVisible(store, rootId, cursor.nodeId)) {
     return cursor;
   }
   if (isVisible(store, rootId, previousRootId)) {
     return endOf(store, previousRootId);
   }
-  const children = store.getChildren(rootId);
-  const first = store.getNode(children[0]);
-  const isOnlyEmpty =
-    first !== undefined && children.length === 1 && isEmptyNode(first);
-  if (hasTitle(store, rootId) && !isOnlyEmpty) {
+  if (hasTitle(store, rootId)) {
     return endOf(store, rootId);
   }
   return first === undefined ? null : cursorAt(first.id, 0);
