@@ -42,7 +42,7 @@ export function useUndoKeys(history: UndoHistory): void {
   }, [history]);
 }
 
-export function actionOfKey(event: {
+function actionOfKey(event: {
   key: string;
   metaKey: boolean;
   ctrlKey: boolean;
