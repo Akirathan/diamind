@@ -6,6 +6,7 @@ import type { ChangeBatch } from "@/shared/outline/change-set";
 import { openDatabase, type Db } from "@/main/db/database";
 import { applyChangeSet, loadOutline } from "@/main/db/outline";
 import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
+import { registerImportIpc } from "@/main/import/import-ipc";
 import {
   setApplicationMenu,
   setMenuCommandsEnabled,
@@ -132,6 +133,7 @@ if (!app.requestSingleInstanceLock()) {
       db.$client.close();
     });
     registerIpc(db);
+    registerImportIpc();
     setApplicationMenu(() => mainWindow);
     mainWindow = createWindow();
   });

@@ -1,3 +1,4 @@
+import type { OpenedImportFile } from "@/shared/import";
 import type { MenuCommand } from "@/shared/menu";
 import type { ChangeBatch } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
@@ -10,6 +11,8 @@ export const IpcChannel = {
   FlushDone: "outline:flush-done",
   OpenLink: "link:open",
   MenuCommand: "menu:command",
+  OpenImportFile: "import:open-file",
+  ShowImportError: "import:show-error",
 } as const;
 
 export interface AppInfo {
@@ -63,4 +66,8 @@ export interface DiamindApi {
   openLink(url: string): Promise<void>;
   /** Calls `listener` for each selected item of the application menu. Returns a function that removes it. */
   onMenuCommand(listener: (command: MenuCommand) => void): () => void;
+  /** Lets the user choose a file. Resolves with its content. */
+  openImportFile(): Promise<OpenedImportFile>;
+  /** Resolves when the user closes the message. */
+  showImportError(message: string): Promise<void>;
 }

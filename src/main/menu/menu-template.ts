@@ -36,7 +36,11 @@ export function menuTemplate({
     ...(isMac ? appMenu : []),
     {
       label: "File",
-      submenu: [{ role: isMac ? "close" : "quit" }],
+      submenu: [
+        commandItem("importWorkflowy", "Import from Workflowy..."),
+        { type: "separator" },
+        { role: isMac ? "close" : "quit" },
+      ],
     },
     {
       label: "Edit",

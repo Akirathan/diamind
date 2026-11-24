@@ -7,6 +7,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
+import { useImport } from "@/renderer/src/import/use-import";
 import { keepCurrentRow } from "@/renderer/src/outline-view/rows/kept-row";
 import { OutlineRowView } from "@/renderer/src/outline-view/rows/OutlineRowView";
 import { revealCursor } from "@/renderer/src/outline-view/focus/reveal-cursor";
@@ -26,6 +27,7 @@ export function OutlineView({ session }: { session: OutlineSession }) {
   const focusRequest = useSyncExternalStore(focus.subscribe, focus.getRequest);
   const scrollRef = useRef<HTMLDivElement>(null);
   useUndo(history);
+  useImport({ store, editing, rootId: store.rootId });
 
   useEffect(() => {
     if (rows.length === 0) {

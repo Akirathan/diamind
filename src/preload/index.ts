@@ -22,6 +22,9 @@ const api: DiamindApi = {
     };
   },
   openLink: (url) => ipcRenderer.invoke(IpcChannel.OpenLink, url),
+  openImportFile: () => ipcRenderer.invoke(IpcChannel.OpenImportFile),
+  showImportError: (message) =>
+    ipcRenderer.invoke(IpcChannel.ShowImportError, message),
   onMenuCommand: (listener) => {
     function onCommand(_event: IpcRendererEvent, command: MenuCommand): void {
       listener(command);
