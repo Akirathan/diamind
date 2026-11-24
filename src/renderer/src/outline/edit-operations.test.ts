@@ -479,22 +479,27 @@ describe("mergeIntoUpper", () => {
     expect(node("a2").text).toBe("a2b");
   });
 
-  it("merges the first child into its parent", () => {
+  it("merges a first child without children into its parent", () => {
     const { store, run, node } = setup(`
+      a
+        b
+        d
+    `);
+    expect(run(merge("b"))).toEqual(cursorAt("a", 1));
+    expect(dump(store)).toBe("a\n  d");
+    expect(node("a").text).toBe("ab");
+  });
+
+  it("does nothing in a first child with children", () => {
+    const { store, expectUnchanged } = setup(`
       a
         b
           c
         d
     `);
-    expect(run(merge("b"))).toEqual(cursorAt("a", 1));
-    expect(dump(store)).toBe(
-      outline(`
-        a
-          d
-          c
-      `),
-    );
-    expect(node("a").text).toBe("ab");
+    expectUnchanged(merge("b"));
+    store.setCollapsed("b", true);
+    expectUnchanged(merge("b"));
   });
 
   it("removes an empty node", () => {
@@ -592,16 +597,6 @@ describe("mergeIntoUpper", () => {
       "a",
     );
     expectUnchanged(merge("b"));
-  });
-
-  it("is rejected if the parent would end with two empty children", () => {
-    const { expectRejectedEdit } = setup(`
-      a
-        b
-          ~c
-        ~d
-    `);
-    expectRejectedEdit(merge("b"));
   });
 
   it("does nothing below a divider or an attachment", () => {

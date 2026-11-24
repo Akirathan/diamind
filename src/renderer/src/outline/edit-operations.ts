@@ -141,7 +141,7 @@ function joinNotes(upper: string, lower: string): string {
   return upper !== "" && lower !== "" ? `${upper}\n${lower}` : upper + lower;
 }
 
-/** False if it would not be clear where the children of the merged node go. */
+/** Children can only go to a previous sibling without children. */
 function canMergeChildren(store: OutlineStore, node: Node): boolean {
   if (store.getChildren(node.id).length === 0) {
     return true;
@@ -150,7 +150,8 @@ function canMergeChildren(store: OutlineStore, node: Node): boolean {
   const index = siblings.indexOf(node.id);
   return (
     !isCollapsed(store, node.id) &&
-    (index === 0 || store.getChildren(siblings[index - 1]).length === 0)
+    index > 0 &&
+    store.getChildren(siblings[index - 1]).length === 0
   );
 }
 

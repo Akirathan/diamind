@@ -34,12 +34,12 @@
   - The upper node keeps its id, `created_at` and format.
   - The text of the merged node is appended to the text of the upper node.
   - The children of the merged node are appended to the children of the upper node.
-    - If the upper node is the parent of the merged node, they go after the other children of the parent.
   - The note of the merged node is appended to the note of the upper node, see [Notes](notes.md).
   - Attributes of the merged node are added to the upper node. If both have the same key, the value of the upper node wins.
   - If it is not clear where the children of the merged node should go, nothing happens. The user can use drag-and-drop instead. These cases are:
     - Both the merged node and its previous sibling have children, expanded or collapsed.
     - The merged node has collapsed children.
+    - The merged node has children and is the first child of its parent.
   - If the upper node is a divider or an attachment, nothing happens.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
