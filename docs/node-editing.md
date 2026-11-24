@@ -19,7 +19,8 @@
     - If the new node would be followed only by an empty last child, no node is created. The cursor moves to that empty child instead.
   - At the beginning of the text: a new empty sibling is created above the node. The node keeps its id.
   - In the middle of the text: the node is _split_. The text after the cursor moves to a new sibling below the node.
-    - The original node keeps its id, `created_at`, format, note, attributes and children.
+    - The original node keeps its id, `created_at`, format, note and attributes.
+    - The children move to the new sibling. If they were collapsed, they stay collapsed there.
 - Hitting `Enter` with selected text first deletes the selected text. If the whole text is selected, it does nothing else.
 - A new node created by `Enter` or by pasting in a paragraph is a paragraph. In a node of any other format it is a bullet.
 - Hitting `Enter` in an empty node:

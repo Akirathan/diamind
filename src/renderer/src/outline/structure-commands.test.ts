@@ -515,6 +515,51 @@ describe("empty tail with dividers", () => {
   });
 });
 
+describe("moveChildren", () => {
+  it("appends the children in their order and keeps the node", () => {
+    const { store } = createOutline(`
+      a
+        a1
+      b
+        b1
+          b11
+        b2
+    `);
+    store.moveChildren("b", "a");
+    expect(dump(store)).toBe(
+      outline(`
+        a
+          a1
+          b1
+            b11
+          b2
+        b
+      `),
+    );
+  });
+
+  it("changes nothing without children", () => {
+    const { store } = createOutline(`
+      a
+      b
+    `);
+    expect(store.moveChildren("a", "b").nodes.upsert).toEqual([]);
+  });
+
+  it("rejects an empty tail, unknown nodes and its own subtree", () => {
+    const { store } = createOutline(`
+      a
+        ~a1
+      b
+        ~b1
+    `);
+    expectRejected(store, () => store.moveChildren("b", "a"), "emptyTail");
+    expectRejected(store, () => store.moveChildren("x", "a"), "nodeNotFound");
+    expectRejected(store, () => store.moveChildren("a", "x"), "nodeNotFound");
+    expectRejected(store, () => store.moveChildren("a", "a1"), "moveIntoSelf");
+  });
+});
+
 describe("dissolveNode", () => {
   it("appends the children to the new parent and deletes the node", () => {
     const { store, clock } = createOutline(`
@@ -573,6 +618,19 @@ describe("dissolveNode", () => {
     `);
     store.dissolveNode("b", "a");
     expect(store.getChildren("a")).toEqual(["a1", "b1", "c"]);
+  });
+
+  it("accepts two empty nodes that already were at the end", () => {
+    const { store } = createOutline(`
+      a
+      b
+        ~b1
+        ~b2
+        c
+    `);
+    store.deleteNode("c");
+    store.dissolveNode("b", "a");
+    expect(store.getChildren("a")).toEqual(["b1", "b2"]);
   });
 
   it("does not count the deleted node in the empty rule", () => {

@@ -74,6 +74,28 @@ test("Enter in the middle splits the node", async () => {
   await expect(page.locator('[data-node-id="seed-5"]')).toHaveText("No");
 });
 
+test("Enter in the middle moves the children to the second part", async () => {
+  const page = await launch(6);
+  await putCursor(page, "seed-2", 2);
+  await page.keyboard.press("Enter");
+  await expectCursor(page, "|de 2");
+  await expectOutline(page, ["Node 1", "  No", "  de 2", ...SEED.slice(2)]);
+  await page.keyboard.press(UNDO);
+  await expectOutline(page, SEED);
+  await expectCursor(page, "No|de 2");
+
+  const rows = page.locator("[data-node-id]");
+  await rows.nth(1).getByRole("button", { name: "Show children" }).click();
+  await putCursor(page, "seed-2", 2);
+  await page.keyboard.press("Enter");
+  await expectOutline(page, ["Node 1", "  No", "  de 2", "  Node 5", "Node 6"]);
+  await expect(rows.nth(1).getByRole("button")).toHaveCount(0);
+  await expect(rows.nth(2).getByRole("button")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+});
+
 test("Enter in an empty last child unindents it until the top level", async () => {
   const page = await launch(6);
   await putCursor(page, "seed-4", 6);

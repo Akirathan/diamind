@@ -119,6 +119,10 @@ export class OutlineStore {
     return this.run(() => structure.deleteNode(this.model, id));
   }
 
+  moveChildren(id: string, newParentId: string): ChangeSet {
+    return this.run(() => structure.moveChildren(this.model, id, newParentId));
+  }
+
   dissolveNode(id: string, newParentId: string): ChangeSet {
     return this.run(() => structure.dissolveNode(this.model, id, newParentId));
   }

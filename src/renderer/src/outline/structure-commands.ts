@@ -126,18 +126,38 @@ export function deleteNode(model: OutlineModel, id: string): ChangeSet {
   });
 }
 
-/**
- * Deletes the node, but appends its children to the children of `newParentId`.
- * The empty tail rule applies to the final children of `newParentId`.
- */
+/** Appends the children of the node to the children of `newParentId`. */
+export function moveChildren(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): ChangeSet {
+  const moved = checkMoveChildren(model, id, newParentId);
+  return model.record(() => appendChildren(model, moved, newParentId));
+}
+
+/** Deletes the node, but appends its children to the children of `newParentId`. */
 export function dissolveNode(
   model: OutlineModel,
   id: string,
   newParentId: string,
 ): ChangeSet {
+  model.checkNotRoot(id, "deleted");
+  const moved = checkMoveChildren(model, id, newParentId);
+  return model.record(() => {
+    appendChildren(model, moved, newParentId);
+    model.removeNode(id);
+  });
+}
+
+/** Returns the children of `id`. */
+function checkMoveChildren(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): readonly string[] {
   model.getNode(id);
   model.getNode(newParentId);
-  model.checkNotRoot(id, "deleted");
   if (model.isInSubtree(newParentId, id)) {
     throw new OutlineError(
       "moveIntoSelf",
@@ -145,26 +165,33 @@ export function dissolveNode(
     );
   }
   const moved = [...model.childIds(id)];
-  const siblings = model.childIds(newParentId).filter((s) => s !== id);
-  if (moved.length > 0) {
-    checkEmptyTail(model.childIds(newParentId), [...siblings, ...moved], (s) =>
-      isEmptyNode(model.getNode(s)),
+  // Several children bring their own last two nodes, so they cannot break the rule.
+  if (moved.length === 1) {
+    const siblings = model.childIds(newParentId);
+    checkEmptyTail(
+      siblings,
+      [...siblings.filter((s) => s !== id), ...moved],
+      (s) => isEmptyNode(model.getNode(s)),
     );
   }
+  return moved;
+}
 
+function appendChildren(
+  model: OutlineModel,
+  ids: readonly string[],
+  newParentId: string,
+): void {
   const now = model.now();
-  return model.record(() => {
-    for (const childId of moved) {
-      const last = model.childIds(newParentId).at(-1) ?? null;
-      model.putNode({
-        ...model.getNode(childId),
-        parentId: newParentId,
-        sortKey: model.sortKeyAfter(newParentId, last),
-        modifiedAt: now,
-      });
-    }
-    model.removeNode(id);
-  });
+  for (const id of ids) {
+    const last = model.childIds(newParentId).at(-1) ?? null;
+    model.putNode({
+      ...model.getNode(id),
+      parentId: newParentId,
+      sortKey: model.sortKeyAfter(newParentId, last),
+      modifiedAt: now,
+    });
+  }
 }
 
 function relocate(

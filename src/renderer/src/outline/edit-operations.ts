@@ -4,6 +4,7 @@ import { isEmptyNode } from "@/renderer/src/outline/empty-rule";
 import { OutlineError } from "@/renderer/src/outline/errors";
 import type { OutlineStore } from "@/renderer/src/outline/store";
 import {
+  isCollapsed,
   isExpanded,
   previousVisible,
 } from "@/renderer/src/outline/visible-nodes";
@@ -57,6 +58,11 @@ export function enter(
   const { id: newId } = store.insertNode(parentId, id, format, {
     text: after,
   });
+  if (store.getChildren(id).length > 0) {
+    store.moveChildren(id, newId);
+    store.setCollapsed(newId, isCollapsed(store, id));
+    store.setCollapsed(id, false);
+  }
   return cursorAt(newId, 0);
 }
 

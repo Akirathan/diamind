@@ -219,7 +219,7 @@ describe("enter at the beginning of the text", () => {
 });
 
 describe("enter in the middle of the text", () => {
-  it("moves the text after the cursor to a sibling below", () => {
+  it("moves the text after the cursor and the children to a sibling below", () => {
     const { store, run, node } = setup(`
       abc
         child
@@ -232,8 +232,8 @@ describe("enter in the middle of the text", () => {
     expect(dump(store)).toBe(
       outline(`
         abc
-          child
         n1
+          child
         d
       `),
     );
@@ -251,6 +251,30 @@ describe("enter in the middle of the text", () => {
       createdAt: 3000,
     });
     expect(node("n1").attributes).toBeUndefined();
+  });
+
+  it("keeps collapsed children collapsed", () => {
+    const { store, run } = setup(`
+      abc
+        child
+    `);
+    store.setCollapsed("abc", true);
+    run(enterAt("abc", 1));
+    expect(dump(store)).toBe("abc\nn1\n  child");
+    expect(store.getUiState("n1")?.collapsed).toBe(true);
+    expect(store.getUiState("abc")?.collapsed).toBe(false);
+  });
+
+  it("moves children that are empty", () => {
+    const { store, run } = setup(`
+      abc
+        ~b
+        ~c
+        d
+    `);
+    store.setText("d", "");
+    run(enterAt("abc", 1));
+    expect(store.getChildren("n1")).toEqual(["b", "c", "d"]);
   });
 });
 
