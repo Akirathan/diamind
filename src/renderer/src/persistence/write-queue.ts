@@ -1,3 +1,4 @@
+import type { AppStateValues } from "@/shared/app-state";
 import {
   isEmptyChangeSet,
   type ChangeBatch,
@@ -25,6 +26,7 @@ export interface WriteQueueOptions {
 interface QueuedRows {
   nodes: Map<string, Node | null>;
   uiState: Map<string, NodeUiState | null>;
+  appState: AppStateValues;
 }
 
 const systemTimer: Timer = {
@@ -75,11 +77,12 @@ export class WriteQueue {
     for (const id of changes.uiState.delete) {
       this.pending.uiState.set(id, null);
     }
-    this.startTimer(FLUSH_DELAY_MS);
-    this.cancelMaxWait ??= this.timer.schedule(
-      () => this.startSave(),
-      MAX_WAIT_MS,
-    );
+    this.scheduleSave();
+  }
+
+  addAppState(values: AppStateValues): void {
+    this.pending.appState = { ...this.pending.appState, ...values };
+    this.scheduleSave();
   }
 
   /** Saves now. Resolves when no change is unsaved, also after failed saves. */
@@ -92,6 +95,14 @@ export class WriteQueue {
     });
     this.startSave();
     return idle;
+  }
+
+  private scheduleSave(): void {
+    this.startTimer(FLUSH_DELAY_MS);
+    this.cancelMaxWait ??= this.timer.schedule(
+      () => this.startSave(),
+      MAX_WAIT_MS,
+    );
   }
 
   private startTimer(delayMs: number): void {
@@ -144,6 +155,7 @@ export class WriteQueue {
     this.pending = {
       nodes: new Map([...failed.nodes, ...this.pending.nodes]),
       uiState: new Map([...failed.uiState, ...this.pending.uiState]),
+      appState: { ...failed.appState, ...this.pending.appState },
     };
   }
 
@@ -157,15 +169,22 @@ export class WriteQueue {
 }
 
 function newRows(): QueuedRows {
-  return { nodes: new Map(), uiState: new Map() };
+  return { nodes: new Map(), uiState: new Map(), appState: {} };
 }
 
 function isEmpty(rows: QueuedRows): boolean {
-  return rows.nodes.size === 0 && rows.uiState.size === 0;
+  return (
+    rows.nodes.size === 0 &&
+    rows.uiState.size === 0 &&
+    Object.keys(rows.appState).length === 0
+  );
 }
 
 function toBatch(rows: QueuedRows): ChangeBatch {
-  return { nodes: toTable(rows.nodes), uiState: toTable(rows.uiState) };
+  const batch = { nodes: toTable(rows.nodes), uiState: toTable(rows.uiState) };
+  return Object.keys(rows.appState).length === 0
+    ? batch
+    : { ...batch, appState: rows.appState };
 }
 
 function toTable<Row>(rows: Map<string, Row | null>): {
