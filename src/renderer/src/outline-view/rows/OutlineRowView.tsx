@@ -1,4 +1,8 @@
-import { memo, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { memo, useSyncExternalStore } from "react";
+import {
+  NodeNote,
+  NodeText,
+} from "@/renderer/src/outline-view/rows/NodeFields";
 import type { OutlineRow } from "@/renderer/src/outline-view/rows/flatten";
 import { indentLineSegments } from "@/renderer/src/outline-view/rows/indent-lines";
 import type { OutlineSession } from "@/renderer/src/outline-view/session";
@@ -27,18 +31,6 @@ export const OutlineRowView = memo(function OutlineRowView({
   measure,
 }: OutlineRowViewProps) {
   const { store, editors, currentIndentLine } = session;
-  const editorRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const parent = editorRef.current;
-    if (parent === null) {
-      return;
-    }
-    const view = editors.mount(id, parent);
-    return () => {
-      editors.unmount(id, view);
-    };
-  }, [editors, id]);
 
   return (
     <div
@@ -64,7 +56,10 @@ export const OutlineRowView = memo(function OutlineRowView({
       <span className="mr-1 flex h-[1lh] w-4 shrink-0 items-center justify-center">
         <Bullet collapsed={collapsed} />
       </span>
-      <div ref={editorRef} className="min-w-0 flex-1" />
+      <div className="min-w-0 flex-1">
+        <NodeText nodeId={id} editors={editors} />
+        <NodeNote nodeId={id} session={session} />
+      </div>
     </div>
   );
 });

@@ -1,17 +1,22 @@
 import type { ChangeSet } from "@/shared/outline/change-set";
+import type { Node } from "@/shared/outline/node";
 import {
   cursorAt,
+  type FieldRef,
   type NodeCursor,
+  type NodeField,
 } from "@/renderer/src/outline/editing/cursor";
+import {
+  cursorAbove,
+  cursorBelow,
+  cursorInOtherField,
+  type CursorTarget,
+} from "@/renderer/src/outline/editing/cursor-moves";
 import * as operations from "@/renderer/src/outline/editing/edit-operations";
 import { OutlineError } from "@/renderer/src/outline/model/errors";
 import type { OutlineStore } from "@/renderer/src/outline/store/store";
 import { UndoHistory } from "@/renderer/src/outline/history/undo";
-import {
-  isVisible,
-  nextVisible,
-  previousVisible,
-} from "@/renderer/src/outline/editing/visible-nodes";
+import { isVisible } from "@/renderer/src/outline/editing/visible-nodes";
 import { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
 import { NodeFocus } from "@/renderer/src/outline-view/focus/node-focus";
 
@@ -58,24 +63,41 @@ export class OutlineEditing {
     );
   }
 
-  /** Returns false if there is no node above. */
-  moveUp(nodeId: string): boolean {
+  /** Returns false if there is no line above. */
+  moveUp(from: FieldRef): boolean {
     const { store, rootId } = this.context;
-    return this.moveTo(previousVisible(store, rootId, nodeId));
+    return this.moveTo(cursorAbove(store, rootId, from));
   }
 
-  /** Returns false if there is no node below. */
-  moveDown(nodeId: string): boolean {
+  /** Returns false if there is no line below. */
+  moveDown(from: FieldRef): boolean {
     const { store, rootId } = this.context;
-    return this.moveTo(nextVisible(store, rootId, nodeId));
+    return this.moveTo(cursorBelow(store, rootId, from));
   }
 
-  private moveTo(nodeId: string | null): boolean {
-    if (nodeId === null) {
+  /** Moves between the text and the note. An empty note appears. */
+  toggleNote(from: FieldRef): void {
+    this.moveTo(cursorInOtherField(this.context.store, from));
+  }
+
+  /** Removes an empty note that lost the focus. */
+  closeEmptyNote({ nodeId, field }: FieldRef): void {
+    const node = this.context.store.getNode(nodeId);
+    if (
+      field === "note" &&
+      node?.note === "" &&
+      this.focus.isIn({ nodeId, field })
+    ) {
+      this.focus.setCursor(cursorAt(nodeId, node.text.length));
+    }
+  }
+
+  private moveTo(target: CursorTarget | null): boolean {
+    if (target === null) {
       return false;
     }
     this.history.breakMerge();
-    this.focus.request(cursorAt(nodeId, 0));
+    this.focus.request(target);
     return true;
   }
 
@@ -115,7 +137,18 @@ export class OutlineEditing {
       isVisible(store, rootId, node.id),
     );
     if (changed !== undefined) {
-      this.focus.request(cursorAt(changed.id, changed.text.length));
+      const field = changedField(changes, changed);
+      this.focus.request(cursorAt(changed.id, changed[field].length, field));
     }
   }
+}
+
+/** `note` if the node differs in its note, which is still there, but not in its text. */
+function changedField(changes: ChangeSet, node: Node): NodeField {
+  const before = changes.nodes.before.find(({ id }) => id === node.id);
+  return before?.text === node.text &&
+    before.note !== node.note &&
+    node.note !== ""
+    ? "note"
+    : "text";
 }

@@ -3,6 +3,7 @@ import type { OutlineRows } from "@/renderer/src/outline/model/load";
 import { seedRows } from "@/renderer/src/outline/fixtures/seed";
 import { OutlineStore } from "@/renderer/src/outline/store/store";
 import type { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
+import { ShownNotes } from "@/renderer/src/outline-view/focus/shown-notes";
 import { OutlineRowsSource } from "@/renderer/src/outline-view/rows/flatten";
 import { CurrentIndentLine } from "@/renderer/src/outline-view/rows/indent-lines";
 import { NodeEditors } from "@/renderer/src/outline-view/editors/node-editors";
@@ -17,6 +18,7 @@ export interface OutlineSession {
   currentNode: CurrentNode;
   currentIndentLine: CurrentIndentLine;
   editors: NodeEditors;
+  shownNotes: ShownNotes;
   stopSaving: () => void;
 }
 
@@ -56,6 +58,7 @@ export function createOutlineSession(
     currentNode,
     currentIndentLine: new CurrentIndentLine(store, currentNode, rows),
     editors: new NodeEditors(store, editing),
+    shownNotes: new ShownNotes(store, editing.focus, currentNode),
     stopSaving,
   };
 }
