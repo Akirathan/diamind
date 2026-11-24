@@ -1,6 +1,7 @@
 # Node editing
 
-- When hovering over a node (on a line), bullet point and three dots should be displayed to the left of the node.
+- The bullet point is always displayed to the left of the node.
+- When hovering over a node (on a line), three dots are displayed to the left of the node.
 - Bullet point enables drag-and-drop of the node
 - Three dots gives a context menu for the node:
   - Turn Into -> Bullets, Paragraph, Code block, Heading 1, Heading 2, Heading 3, Divider

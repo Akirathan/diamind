@@ -11,6 +11,7 @@
     - Possible later, if scrolling is not smooth: render static HTML during fast scroll, create editors when the scroll stops.
   - Cursor movement and selection across nodes are handled by DiaMind, not by CodeMirror.
 - Vim key bindings are postponed. Not part of the first version.
+- Text uses the system font, inline code uses a monospace font. Later, there may be a setting for the font.
 - Unlike Workflowy, the text editing should resemble Obsidian - formatting is done via WISIWYG markdown. For example, when a cursor is in the bold text (text surrounded by `**` ), the star literals should be visible, otherwise, only a bold text should be visible.
   - Nested formatting is decided one by one. For example, with the cursor in the bold but not in the italic part of `**a _b_ c**` , only `**` is visible.
   - A backslash that prevents formatting, e.g. in `\*` , stays visible and is dimmed.

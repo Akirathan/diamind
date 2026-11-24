@@ -23,6 +23,7 @@ DiaMind
 - Develop
   - Do frequent commits with brief and clear descriptions.
   - Split long source files (say more than 1000 lines) into multiple ones with clear names.
+  - No directory should have more than about 10 files. Split it into multiple directories with appropriate names.
   - Unit test whatever makes sense to unit test.
   - Introduce playwright end-to-end tests.
     - No screenshot comparisons.
@@ -56,6 +57,7 @@ Detailed descriptions are in the `docs` folder:
 - [Filter](docs/filter.md)
 - [Notes](docs/notes.md) - multi-line note below a node
 - [Completed nodes](docs/completed.md)
+- [Import](docs/import.md) - import from Workflowy
 
 ## Other features
 
@@ -70,6 +72,4 @@ Detailed descriptions are in the `docs` folder:
 - Export to markdown
   - Attachment node
     -
-- Import
-  -
 - Preferences and logs are stored in local directory, by default, `~/.local/share/diamind` .

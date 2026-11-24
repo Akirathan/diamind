@@ -12,7 +12,9 @@
   - Back and Forward woirk the same as in WEorkflowy
   - Up navigates to the parent node
 - breadcrumbs
-  - #todo
+  - All parents from the global root, named _Home_, to the local root.
+  - Clicking on a crumb zooms to it.
+  - If the path is too long, the middle crumbs are replaced by `…`. Clicking on it lists them.
 
 ## Left (navigator) pane
 
