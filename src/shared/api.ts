@@ -1,9 +1,11 @@
+import type { AppStateValues } from "@/shared/app-state";
 import type { ChangeBatch } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
 
 export const IpcChannel = {
   GetAppInfo: "app:get-info",
   LoadOutline: "outline:load",
+  LoadAppState: "app-state:load",
   SaveChanges: "outline:save",
   FlushRequest: "outline:flush-request",
   FlushDone: "outline:flush-done",
@@ -50,6 +52,7 @@ export interface DiamindApi {
   getAppInfo(): Promise<AppInfo>;
   /** Parse the result with `parseOutlineJson`. */
   loadOutline(): Promise<OutlineJson>;
+  loadAppState(): Promise<AppStateValues>;
   /** Writes the batch in one transaction. Rejects if nothing was written. */
   saveChanges(batch: Json<ChangeBatch>): Promise<void>;
   /**
