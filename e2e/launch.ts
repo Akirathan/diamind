@@ -12,7 +12,7 @@ export interface LaunchedApp {
   close(): Promise<void>;
 }
 
-/** Starts the built app with its own data directory. */
+/** Starts the built app with its own data directory, hidden unless `DIAMIND_HIDDEN=0`. */
 export async function launchApp(
   extraEnv: Record<string, string> = {},
 ): Promise<LaunchedApp> {
@@ -24,6 +24,7 @@ export async function launchApp(
     }
   }
   env.DIAMIND_DATA_DIR = dataDir;
+  env.DIAMIND_HIDDEN ??= "1";
   Object.assign(env, extraEnv);
   const app = await electron.launch({ args: ["."], env });
   return {

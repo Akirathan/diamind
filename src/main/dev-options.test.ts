@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { resolveSeedNodeCount } from "@/main/dev-options";
+import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
+
+describe("resolveHidden", () => {
+  it("is true only for DIAMIND_HIDDEN=1", () => {
+    expect(resolveHidden({ DIAMIND_HIDDEN: "1" }, false)).toBe(true);
+    expect(resolveHidden({ DIAMIND_HIDDEN: "0" }, false)).toBe(false);
+    expect(resolveHidden({}, false)).toBe(false);
+  });
+
+  it("ignores DIAMIND_HIDDEN in a packaged app", () => {
+    expect(resolveHidden({ DIAMIND_HIDDEN: "1" }, true)).toBe(false);
+  });
+});
 
 describe("resolveSeedNodeCount", () => {
   it("is 0 without DIAMIND_SEED_NODES", () => {

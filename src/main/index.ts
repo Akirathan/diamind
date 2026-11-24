@@ -4,13 +4,18 @@ import { join } from "node:path";
 import { IpcChannel, type AppInfo } from "@/shared/api";
 import { openDatabase, type Db } from "@/main/db/database";
 import { loadOutline } from "@/main/db/outline";
-import { resolveSeedNodeCount } from "@/main/dev-options";
+import { resolveHidden, resolveSeedNodeCount } from "@/main/dev-options";
 import { resolveDataDir } from "@/main/paths";
 
 const dataDir = resolveDataDir();
 mkdirSync(dataDir, { recursive: true });
 // Also scopes the single instance lock, so e2e tests with their own data dir do not collide with a running app.
 app.setPath("userData", join(dataDir, "electron"));
+
+const hidden = resolveHidden(process.env, app.isPackaged);
+if (hidden) {
+  app.dock?.hide();
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -25,11 +30,15 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      // Chromium slows down timers and frames of a hidden window.
+      backgroundThrottling: !hidden,
     },
   });
 
   window.once("ready-to-show", () => {
-    window.show();
+    if (!hidden) {
+      window.show();
+    }
   });
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   window.webContents.on("will-navigate", (event, url) => {
