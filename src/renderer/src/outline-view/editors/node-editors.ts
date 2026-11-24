@@ -17,7 +17,7 @@ const MAX_FREE_EDITORS = 50;
 
 const theme = EditorView.theme({
   "&.cm-focused": { outline: "none" },
-  ".cm-scroller": { lineHeight: "inherit" },
+  ".cm-scroller": { fontFamily: "inherit", lineHeight: "inherit" },
   ".cm-content": { padding: "0" },
   ".cm-line": { padding: "0" },
   "@media (prefers-color-scheme: dark)": {
