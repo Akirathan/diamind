@@ -1,12 +1,12 @@
 import { parseOutlineJson, type DiamindApi } from "@/shared/api";
-import type { OutlineRows } from "@/renderer/src/outline/load";
-import { seedRows } from "@/renderer/src/outline/seed";
-import { OutlineStore } from "@/renderer/src/outline/store";
-import type { CurrentNode } from "@/renderer/src/outline-view/current-node";
-import { OutlineRowsSource } from "@/renderer/src/outline-view/flatten";
-import { CurrentIndentLine } from "@/renderer/src/outline-view/indent-lines";
-import { NodeEditors } from "@/renderer/src/outline-view/node-editors";
-import { OutlineEditing } from "@/renderer/src/outline-view/outline-editing";
+import type { OutlineRows } from "@/renderer/src/outline/model/load";
+import { seedRows } from "@/renderer/src/outline/fixtures/seed";
+import { OutlineStore } from "@/renderer/src/outline/store/store";
+import type { CurrentNode } from "@/renderer/src/outline-view/focus/current-node";
+import { OutlineRowsSource } from "@/renderer/src/outline-view/rows/flatten";
+import { CurrentIndentLine } from "@/renderer/src/outline-view/rows/indent-lines";
+import { NodeEditors } from "@/renderer/src/outline-view/editors/node-editors";
+import { OutlineEditing } from "@/renderer/src/outline-view/editing/outline-editing";
 import { saveOutline } from "@/renderer/src/persistence/save-outline";
 
 /** The store and the view state built on it. Lives as long as the window. */

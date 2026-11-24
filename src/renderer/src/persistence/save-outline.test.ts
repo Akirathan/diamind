@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { emptyChangeSet, type ChangeBatch } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
-import { OutlineStore } from "@/renderer/src/outline/store";
-import { createOutline, snapshot } from "@/renderer/src/outline/test-outline";
-import { UndoHistory } from "@/renderer/src/outline/undo";
+import { OutlineStore } from "@/renderer/src/outline/store/store";
+import {
+  createOutline,
+  snapshot,
+} from "@/renderer/src/outline/fixtures/test-outline";
+import { UndoHistory } from "@/renderer/src/outline/history/undo";
 import { FakeTimer } from "@/renderer/src/persistence/fake-timer";
 import {
   saveOutline,
