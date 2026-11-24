@@ -130,6 +130,8 @@ uiState: Map<string, NodeUiState>;
   - It is atomic. If a command throws, all commands of the transaction are undone.
 - Consecutive `setText` of the same node merge into one step until a pause (1 s) or a cursor move. The same for `setNote`.
   - `setText` and `setNote` do not merge with each other.
+- Undo puts the cursor where it was before the step. Also if the change is elsewhere.
+  - If that node is not visible, the cursor goes to the end of a changed visible node.
 - The stack keeps the last 1000 steps.
 
 ## Startup

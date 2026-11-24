@@ -13,9 +13,11 @@
 - Hiting `Tab` on any position in the node _indents_ it.
   - If the new parent is collapsed, it is expanded, so the node stays visible.
 - Hitting `Shift + Tab` on any position in the node _unindents_ it.
+  - A child of the local root is not unindented.
 - Hitting `Enter` in a node with text:
   - At the end of the text: a new empty sibling is created below the node.
     - If the node has expanded children, a new empty first child is created instead.
+    - A node with an empty text and a non-empty note behaves the same.
     - If the new node would be followed only by an empty last child, no node is created. The cursor moves to that empty child instead.
   - At the beginning of the text: a new empty sibling is created above the node. The node keeps its id.
   - In the middle of the text: the node is _split_. The text after the cursor moves to a new sibling below the node.
@@ -27,14 +29,16 @@
   - If the node is the last child, it is _unindented_.
     - If the node is a child of the global root or of the local root, nothing happens.
     - If the unindent would make the last two children of the new parent empty, nothing happens. #todo revisit this corner case.
-  - If the node is not the last child, a new empty sibling is created below it.
+  - If the node is not the last child, a new empty sibling is created below it. Also if the node has expanded children.
   - Follows the rule about empty siblings in [Data model](data-model.md).
 - Hitting `Backspace` at the beginning of a node merges it into the previous visible node (the _upper node_).
   - The upper node keeps its id, `created_at` and format.
   - The text of the merged node is appended to the text of the upper node.
   - The children of the merged node are appended to the children of the upper node.
+    - If the upper node is the parent of the merged node, they go after the other children of the parent.
   - The note of the merged node is appended to the note of the upper node, see [Notes](notes.md).
   - Attributes of the merged node are added to the upper node. If both have the same key, the value of the upper node wins.
+  - If the upper node is a divider or an attachment, nothing happens.
 - `Up` / `Down` on the first / last line of a node moves the cursor to the previous / next visible node.
   - The cursor goes to the beginning of that node. The horizontal position is not kept.
 - Attachment nodes have no text cursor. When the cursor moves to an attachment node (`Up` / `Down`), the node is _selected_ (highlighted).
