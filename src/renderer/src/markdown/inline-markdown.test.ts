@@ -6,7 +6,7 @@ import {
 
 /** Each span as `kind:text without markers`, with the URL of a link. */
 function parse(text: string): string[] {
-  return parseInlineMarkdown(text).map((span) => {
+  return parseInlineMarkdown(text).spans.map((span) => {
     const [open, close] = span.markers;
     const inner =
       open === undefined
@@ -77,7 +77,7 @@ describe("parseInlineMarkdown", () => {
   });
 
   it("has the positions of the markers", () => {
-    expect(parseInlineMarkdown("a **b**")).toEqual([
+    expect(parseInlineMarkdown("a **b**").spans).toEqual([
       {
         kind: "bold",
         from: 2,
@@ -92,7 +92,7 @@ describe("parseInlineMarkdown", () => {
   });
 
   it("parses each line on its own", () => {
-    const spans = parseInlineMarkdown("a\n**b**\n*c\nd*");
+    const { spans } = parseInlineMarkdown("a\n**b**\n*c\nd*");
     expect(spans.map(({ kind, from, to }) => [kind, from, to])).toEqual([
       ["bold", 2, 7],
     ]);
@@ -105,6 +105,12 @@ describe("parseInlineMarkdown", () => {
     ["[a](<file:///my dir>)", ["link:a -> file:///my dir"]],
     ['[a](https://b.c "title")', ["link:a -> https://b.c"]],
     ["[a](https://b.c/\\))", ["link:a -> https://b.c/)"]],
+    ["[a]()", ["link:a -> "]],
+    ["[a](b)", ["link:a -> b"]],
+    ["[a](www.example.com)", ["link:a -> www.example.com"]],
+    ["[a](javascript:alert(1))", ["link:a -> javascript:alert(1)"]],
+    ["[a](https://)", ["link:a -> https://"]],
+    ["<mailto:a@b.c>", ["link:mailto:a@b.c -> mailto:a@b.c"]],
     ["[**a**](https://b.c)", ["link:**a** -> https://b.c", "bold:a"]],
     ["[https://a.b](https://c.d)", ["link:https://a.b -> https://c.d"]],
   ])("finds the link %s", (text, spans) => {
@@ -114,11 +120,7 @@ describe("parseInlineMarkdown", () => {
   it.each([
     "[a]",
     "[a][b]",
-    "[a]()",
-    "[a](b)",
-    "[a](www.example.com)",
-    "[a](javascript:alert(1))",
-    "[a](mailto:a@b.c)",
+    "[a](b c)",
     "[](https://example.com)",
     "[ ](https://example.com)",
   ])("does not make a link of %s", (text) => {
@@ -149,6 +151,39 @@ describe("parseInlineMarkdown", () => {
     expect(parse("**https://a.b**")).toEqual([
       "bold:https://a.b",
       "link:https://a.b -> https://a.b",
+    ]);
+  });
+});
+
+describe("syntax", () => {
+  it.each([
+    ["a \\*b\\*", ["marker:\\", "marker:\\"]],
+    ["~~a~~", ["marker:~~", "marker:~~"]],
+    ["<b>a</b>", ["html:<b>", "html:</b>"]],
+    ["<!-- a -->", ["html:<!-- a -->"]],
+    ["<https://a.b>", ["marker:<", "marker:>"]],
+    [
+      "![a](https://b.c)",
+      ["marker:![", "marker:]", "marker:(", "marker:)", "url:https://b.c"],
+    ],
+    ["[a][b]", ["marker:[", "marker:]", "url:[b]"]],
+    ["C:\\dir 1 < 2 [ ] [x] ~a~", []],
+    ["`\\*`", []],
+  ])("highlights %s", (text, expected) => {
+    const { syntax } = parseInlineMarkdown(text);
+    expect(
+      syntax.map(({ kind, from, to }) => `${kind}:${text.slice(from, to)}`),
+    ).toEqual(expected);
+  });
+
+  it("formats inside of plain syntax", () => {
+    expect(parse("~~**b**~~")).toEqual(["bold:b"]);
+    expect(parse("<i>**b**</i>")).toEqual(["bold:b"]);
+  });
+
+  it("has the positions in the whole text", () => {
+    expect(parseInlineMarkdown("a\n\\*").syntax).toEqual([
+      { kind: "marker", from: 2, to: 3 },
     ]);
   });
 });

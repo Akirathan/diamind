@@ -1,9 +1,7 @@
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import {
-  LINK_URL_ATTRIBUTE,
-  RENDERED_LINK_ROLE,
-} from "@/renderer/src/markdown/decorations";
+import { LINK_URL_ATTRIBUTE } from "@/renderer/src/markdown/decorations";
+import { isOpenLinkClick } from "@/renderer/src/markdown/open-link-key";
 import {
   previewField,
   previewState,
@@ -19,10 +17,10 @@ const handlers = EditorView.domEventHandlers({
       return false;
     }
     if (linkToOpen(event) !== null) {
-      // Keeps the cursor where it is, so the link stays rendered.
+      // Keeps the cursor where it is, so the link does not change under the mouse.
       return true;
     }
-    if (view.state.field(previewField).spans.length > 0) {
+    if (view.state.field(previewField).markdown.spans.length > 0) {
       trackMouse(view);
     }
     return false;
@@ -67,19 +65,12 @@ function trackMouse(view: EditorView): void {
   }
 }
 
-/** A link with the cursor inside is open for editing, so it needs `Cmd` or `Ctrl` to be opened. */
 function linkToOpen(event: MouseEvent): string | null {
-  if (!(event.target instanceof Element) || event.shiftKey || event.altKey) {
+  if (!(event.target instanceof Element) || !isOpenLinkClick(event)) {
     return null;
   }
   const link = event.target.closest(`[${LINK_URL_ATTRIBUTE}]`);
-  if (link === null) {
-    return null;
-  }
-  const rendered = link.getAttribute("role") === RENDERED_LINK_ROLE;
-  return rendered || event.metaKey || event.ctrlKey
-    ? link.getAttribute(LINK_URL_ATTRIBUTE)
-    : null;
+  return link?.getAttribute(LINK_URL_ATTRIBUTE) ?? null;
 }
 
 /** Shows inline markdown formatted and without its markers, except around the cursor. */

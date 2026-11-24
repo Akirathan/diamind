@@ -2,18 +2,21 @@ import type { Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import {
   touchesSpan,
-  type InlineSpan,
+  type InlineMarkdown,
   type TextRange,
 } from "@/renderer/src/markdown/inline-markdown";
 
-/** On links that a plain click opens. */
-export const RENDERED_LINK_ROLE = "link";
 export const LINK_URL_ATTRIBUTE = "data-link-url";
 
 const hidden = Decoration.replace({});
 const visibleMarker = Decoration.mark({
   class: "text-neutral-400 dark:text-neutral-500",
 });
+const syntaxStyles = {
+  marker: visibleMarker,
+  url: Decoration.mark({ class: "text-blue-600 dark:text-blue-400" }),
+  html: Decoration.mark({ class: "text-rose-700 dark:text-rose-400" }),
+};
 const styles = {
   bold: Decoration.mark({ class: "font-bold" }),
   italic: Decoration.mark({ class: "italic" }),
@@ -26,19 +29,17 @@ const styles = {
 
 /** `selection` is empty for an editor without focus. */
 export function buildDecorations(
-  spans: readonly InlineSpan[],
+  { spans, syntax }: InlineMarkdown,
   selection: readonly TextRange[],
 ): DecorationSet {
-  if (spans.length === 0) {
+  if (spans.length === 0 && syntax.length === 0) {
     return Decoration.none;
   }
   const decorations: Range<Decoration>[] = [];
   for (const span of spans) {
     const touched = touchesSpan(span, selection);
     const style =
-      span.kind === "link"
-        ? linkDecoration(span.url ?? "", touched)
-        : styles[span.kind];
+      span.kind === "link" ? linkDecoration(span.url ?? "") : styles[span.kind];
     decorations.push(style.range(span.from, span.to));
     for (const marker of span.markers) {
       decorations.push(
@@ -46,16 +47,16 @@ export function buildDecorations(
       );
     }
   }
+  for (const { kind, from, to } of syntax) {
+    decorations.push(syntaxStyles[kind].range(from, to));
+  }
   return Decoration.set(decorations, true);
 }
 
-function linkDecoration(url: string, touched: boolean): Decoration {
-  const attributes: Record<string, string> = { [LINK_URL_ATTRIBUTE]: url };
-  if (!touched) {
-    attributes.role = RENDERED_LINK_ROLE;
-  }
+function linkDecoration(url: string): Decoration {
   return Decoration.mark({
-    class: `text-blue-600 underline dark:text-blue-400 ${touched ? "" : "cursor-pointer"}`,
-    attributes,
+    class:
+      "text-blue-600 underline dark:text-blue-400 [[data-open-link-key]_&]:cursor-pointer",
+    attributes: { [LINK_URL_ATTRIBUTE]: url },
   });
 }

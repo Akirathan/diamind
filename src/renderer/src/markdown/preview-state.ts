@@ -12,7 +12,7 @@ import { buildDecorations } from "@/renderer/src/markdown/decorations";
 import {
   parseInlineMarkdown,
   touchesSpan,
-  type InlineSpan,
+  type InlineMarkdown,
   type TextRange,
 } from "@/renderer/src/markdown/inline-markdown";
 
@@ -23,7 +23,7 @@ export const setMouseDown = StateEffect.define<boolean>();
 interface Preview {
   readonly focused: boolean;
   readonly mouseDown: boolean;
-  readonly spans: readonly InlineSpan[];
+  readonly markdown: InlineMarkdown;
   /** The markers of spans that touch it are visible. */
   readonly selection: readonly TextRange[];
   readonly decorations: DecorationSet;
@@ -38,17 +38,17 @@ export const previewField = StateField.define<Preview>({
 });
 
 function show(
-  spans: readonly InlineSpan[],
+  markdown: InlineMarkdown,
   selection: readonly TextRange[],
   focused: boolean,
   mouseDown: boolean,
 ): Preview {
-  const decorations = buildDecorations(spans, selection);
-  return { spans, selection, focused, mouseDown, decorations };
+  const decorations = buildDecorations(markdown, selection);
+  return { markdown, selection, focused, mouseDown, decorations };
 }
 
 function updatePreview(preview: Preview, tr: Transaction): Preview {
-  let { focused, mouseDown, spans } = preview;
+  let { focused, mouseDown, markdown } = preview;
   for (const effect of tr.effects) {
     if (effect.is(setFocused)) {
       focused = effect.value;
@@ -57,7 +57,7 @@ function updatePreview(preview: Preview, tr: Transaction): Preview {
     }
   }
   if (tr.docChanged) {
-    spans = parseInlineMarkdown(tr.newDoc.toString());
+    markdown = parseInlineMarkdown(tr.newDoc.toString());
     mouseDown = false;
   }
   if (mouseDown) {
@@ -67,17 +67,17 @@ function updatePreview(preview: Preview, tr: Transaction): Preview {
   if (
     focused === preview.focused &&
     mouseDown === preview.mouseDown &&
-    spans === preview.spans &&
-    (spans.length === 0 || selection === preview.selection)
+    markdown === preview.markdown &&
+    (markdown.spans.length === 0 || selection === preview.selection)
   ) {
     return preview;
   }
-  return show(spans, selection, focused, mouseDown);
+  return show(markdown, selection, focused, mouseDown);
 }
 
 /** The position at the outer side of the hidden markers around `pos`. */
 function outsideHiddenMarkers(preview: Preview, pos: number): number {
-  const hiding = preview.spans.filter(
+  const hiding = preview.markdown.spans.filter(
     (span) => span.markers.length > 0 && !touchesSpan(span, preview.selection),
   );
   // Inner spans come last and have to be left first.

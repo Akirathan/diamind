@@ -112,20 +112,19 @@ test("the row height is the same with inline code", async () => {
   expect((await line.boundingBox())?.height).toBe(height);
 });
 
-test("a click on a link opens it", async () => {
+test("Cmd + click on a link opens it", async () => {
   await page.keyboard.type(
     "[docs](https://example.com/a) file:///Users/some%20dir http://b.c end",
   );
-  await expect(content).toHaveText(
-    "docs file:///Users/some%20dir http://b.c end",
-  );
+  const shown = "docs file:///Users/some%20dir http://b.c end";
+  await expect(content).toHaveText(shown);
   const url = page.url();
-  const links = content.getByRole("link");
+  const links = content.locator("[data-link-url]");
   await expect(links).toHaveCount(3);
-  await links.nth(0).click();
+  await links.nth(0).click({ modifiers: ["ControlOrMeta"] });
   await expect.poll(openedLinks).toEqual(["external https://example.com/a"]);
-  await links.nth(1).click();
-  await links.nth(2).click();
+  await links.nth(1).click({ modifiers: ["ControlOrMeta"] });
+  await links.nth(2).click({ modifiers: ["ControlOrMeta"] });
   await expect
     .poll(openedLinks)
     .toEqual([
@@ -135,22 +134,61 @@ test("a click on a link opens it", async () => {
     ]);
   expect(page.url()).toBe(url);
   expect(launched.app.windows()).toHaveLength(1);
-  // The click did not move the cursor into a link.
-  await expect(links).toHaveCount(3);
+  // The cursor did not move into a link.
+  await expect(content).toHaveText(shown);
 });
 
-test("a link with the cursor is edited, and opened with Cmd or Ctrl", async () => {
-  await page.keyboard.type("[docs](https://example.com)");
+test("a plain click on a link moves the cursor into it", async () => {
+  await page.keyboard.type("[docs](https://example.com) end");
   await blurEditor();
-  await expect(content).toHaveText("docs");
-  await clickBehindText();
-  await expect(content).toHaveText("[docs](https://example.com)");
-  const link = content.locator("[data-link-url]");
-  await link.click();
+  await expect(content).toHaveText("docs end");
+  await content.locator("[data-link-url]").click();
+  await expect(content).toHaveText("[docs](https://example.com) end");
+  await page.keyboard.type("X");
+  await expect(content).toHaveText(/^\[d\w*X\w*s\]/);
+
+  await content.locator("[data-link-url]").click({
+    modifiers: ["ControlOrMeta"],
+  });
+  await expect.poll(openedLinks).toEqual(["external https://example.com/"]);
+});
+
+test("an invalid link looks like a valid one and does not open", async () => {
+  await page.keyboard.type("[one](www.example.com) [two]() end");
+  await expect(content).toHaveText("one two end");
+  const links = content.locator("[data-link-url]");
+  await expect(links).toHaveCount(2);
+  const failed = page.waitForEvent("console", (message) =>
+    message.text().includes("Cannot open www.example.com"),
+  );
+  await links.nth(0).click({ modifiers: ["ControlOrMeta"] });
+  await failed;
+  await links.nth(1).click({ modifiers: ["ControlOrMeta"] });
+  await expect(content).toHaveText("one two end");
   expect(await openedLinks()).toEqual([]);
 
-  await link.click({ modifiers: ["ControlOrMeta"] });
-  await expect.poll(openedLinks).toEqual(["external https://example.com/"]);
+  await links.nth(0).click();
+  await expect(content).toHaveText("[one](www.example.com) two end");
+});
+
+test("the mouse cursor over a link is a pointer only with Cmd", async () => {
+  await page.keyboard.type("[docs](https://example.com) end");
+  const link = content.locator("[data-link-url]");
+  await link.hover();
+  await expect(link).toHaveCSS("cursor", "auto");
+  await page.keyboard.down("ControlOrMeta");
+  await expect(link).toHaveCSS("cursor", "pointer");
+  await page.keyboard.up("ControlOrMeta");
+  await expect(link).toHaveCSS("cursor", "auto");
+});
+
+test("the backslash of an escape is visible and dimmed", async () => {
+  await page.keyboard.type("\\*a*");
+  await blurEditor();
+  await expect(content).toHaveText("\\*a*");
+  await expect(content.getByText("\\", { exact: true })).toHaveClass(
+    /text-neutral-400/,
+  );
 });
 
 test("the main process rejects other protocols", async () => {

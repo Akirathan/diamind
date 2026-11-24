@@ -90,6 +90,15 @@ describe("marker visibility", () => {
     expect(visibleText(state)).toBe("a **b** c d g");
   });
 
+  it("keeps plain syntax visible", () => {
+    const source = "\\*a\\* ~~b~~ <i>c</i> ![d](e) [f][g]";
+    expect(visibleText(create(source, false))).toBe(source);
+  });
+
+  it("hides the markers of an invalid link too", () => {
+    expect(visibleText(create("[a](b) [c]()", false))).toBe("a c");
+  });
+
   it("decides for nested spans one by one", () => {
     const source = "**a _b_ c**";
     expect(visibleText(select(create(source), 2))).toBe("**a b c**");
