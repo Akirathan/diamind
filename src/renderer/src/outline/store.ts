@@ -9,9 +9,12 @@ import type {
   NodeUiState,
 } from "../../../shared/outline/node";
 import * as fields from "./field-commands";
+import { restoreRows, type RestoreRows } from "./restore";
 import { loadModel, type OutlineRows } from "./load";
 import type { OutlineModel, OutlineOptions } from "./model";
 import * as structure from "./structure-commands";
+
+export type { RestoreRows } from "./restore";
 
 export interface OutlineEvent {
   /** Changed and deleted nodes, plus the parents whose children changed. */
@@ -126,6 +129,14 @@ export class OutlineStore {
 
   removeAttribute(id: string, key: string): ChangeSet {
     return this.run(() => fields.removeAttribute(this.model, id, key));
+  }
+
+  /**
+   * Puts and removes raw rows without validation, for undo and redo.
+   * The rows must form a valid outline afterwards.
+   */
+  restoreRows(rows: RestoreRows): ChangeSet {
+    return this.run(() => restoreRows(this.model, rows));
   }
 
   private run(command: () => ChangeSet): ChangeSet {
