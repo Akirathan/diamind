@@ -1,11 +1,8 @@
 import { generateKeyBetween } from "fractional-indexing";
-import {
-  emptyChangeSet,
-  type ChangeSet,
-} from "../../../shared/outline/change-set";
-import type { Node, NodeUiState } from "../../../shared/outline/node";
-import { OutlineError } from "./errors";
-import { compareSortKeys } from "./sort-keys";
+import { emptyChangeSet, type ChangeSet } from "@/shared/outline/change-set";
+import type { Node, NodeUiState } from "@/shared/outline/node";
+import { OutlineError } from "@/renderer/src/outline/errors";
+import { compareSortKeys } from "@/renderer/src/outline/sort-keys";
 
 export interface OutlineOptions {
   /** Epoch milliseconds. */

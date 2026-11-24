@@ -1,5 +1,5 @@
-import type { Node, NodeUiState } from "../../shared/outline/node";
-import type { NodeRow, NodeUiStateRow } from "./schema";
+import type { Node, NodeUiState } from "@/shared/outline/node";
+import type { NodeRow, NodeUiStateRow } from "@/main/db/schema";
 
 export function nodeToRow(node: Node): NodeRow {
   return {

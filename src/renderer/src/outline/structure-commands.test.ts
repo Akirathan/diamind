@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Node, NodeFormat } from "../../../shared/outline/node";
+import type { Node, NodeFormat } from "@/shared/outline/node";
 import {
   CREATED_AT,
   ROOT,
@@ -7,7 +7,7 @@ import {
   dump,
   expectRejected,
   outline,
-} from "./test-outline";
+} from "@/renderer/src/outline/test-outline";
 
 const node = (store: { getNode(id: string): Node | undefined }, id: string) =>
   store.getNode(id) as Node;

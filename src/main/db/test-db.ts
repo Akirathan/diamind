@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
-import type { Node } from "../../shared/outline/node";
-import { openDatabase, type Db } from "./database";
+import type { Node } from "@/shared/outline/node";
+import { openDatabase, type Db } from "@/main/db/database";
 
 export const MIGRATIONS_FOLDER = fileURLToPath(
   new URL("./migrations", import.meta.url),

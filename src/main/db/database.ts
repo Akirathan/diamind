@@ -4,7 +4,7 @@ import {
   type BetterSQLite3Database,
 } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import * as schema from "./schema";
+import * as schema from "@/main/db/schema";
 
 export type Db = BetterSQLite3Database<typeof schema> & {
   $client: Database.Database;

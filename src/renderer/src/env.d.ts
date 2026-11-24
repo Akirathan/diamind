@@ -1,4 +1,4 @@
-import type { DiamindApi } from "../../shared/api";
+import type { DiamindApi } from "@/shared/api";
 
 declare global {
   interface Window {

@@ -4,9 +4,9 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { parseOutlineJson } from "../src/shared/api";
-import { openDatabase } from "../src/main/db/database";
-import { loadOutline } from "../src/main/db/outline";
+import { parseOutlineJson } from "@/shared/api";
+import { openDatabase } from "@/main/db/database";
+import { loadOutline } from "@/main/db/outline";
 
 const count = Number(process.argv[2] ?? 100_000);
 const keepDir = process.argv[3];

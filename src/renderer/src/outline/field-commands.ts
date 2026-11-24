@@ -1,13 +1,13 @@
-import type { ChangeSet } from "../../../shared/outline/change-set";
+import type { ChangeSet } from "@/shared/outline/change-set";
 import {
   NODE_FORMATS,
   type JsonValue,
   type Node,
   type NodeAttributes,
   type NodeFormat,
-} from "../../../shared/outline/node";
-import { OutlineError } from "./errors";
-import type { OutlineModel } from "./model";
+} from "@/shared/outline/node";
+import { OutlineError } from "@/renderer/src/outline/errors";
+import type { OutlineModel } from "@/renderer/src/outline/model";
 
 type NodeFields = Partial<
   Pick<Node, "text" | "note" | "format" | "completedAt" | "attributes">

@@ -3,7 +3,7 @@ import {
   NODE_FORMATS,
   NODE_TYPES,
   type NodeAttributes,
-} from "../../shared/outline/node";
+} from "@/shared/outline/node";
 
 export const nodes = sqliteTable("nodes", {
   id: text("id").primaryKey(),

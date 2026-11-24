@@ -1,11 +1,11 @@
 import { inArray } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
-import type { OutlineJson } from "../../shared/api";
-import type { ChangeSet } from "../../shared/outline/change-set";
-import type { Db } from "./database";
-import { nodeToRow, uiStateToRow } from "./mapping";
-import { nodes, nodeUiState } from "./schema";
-import { selectRowsAsJson, upsertPlaceholders } from "./table-sql";
+import type { OutlineJson } from "@/shared/api";
+import type { ChangeSet } from "@/shared/outline/change-set";
+import type { Db } from "@/main/db/database";
+import { nodeToRow, uiStateToRow } from "@/main/db/mapping";
+import { nodes, nodeUiState } from "@/main/db/schema";
+import { selectRowsAsJson, upsertPlaceholders } from "@/main/db/table-sql";
 
 // SQLite limits the number of bound parameters per statement.
 const DELETE_CHUNK = 500;

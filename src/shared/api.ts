@@ -1,4 +1,4 @@
-import type { Node, NodeUiState } from "./outline/node";
+import type { Node, NodeUiState } from "@/shared/outline/node";
 
 export const IpcChannel = {
   GetAppInfo: "app:get-info",

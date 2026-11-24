@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { emptyChangeSet, type ChangeSet } from "@/shared/outline/change-set";
+import { parseOutlineJson, type LoadedOutline } from "@/shared/api";
+import type { JsonValue, Node } from "@/shared/outline/node";
+import type { Db } from "@/main/db/database";
 import {
-  emptyChangeSet,
-  type ChangeSet,
-} from "../../shared/outline/change-set";
-import { parseOutlineJson, type LoadedOutline } from "../../shared/api";
-import type { JsonValue, Node } from "../../shared/outline/node";
-import type { Db } from "./database";
-import { applyChangeSet, loadOutline as loadOutlineJson } from "./outline";
-import { openTestDatabase, testNode } from "./test-db";
+  applyChangeSet,
+  loadOutline as loadOutlineJson,
+} from "@/main/db/outline";
+import { openTestDatabase, testNode } from "@/main/db/test-db";
 
 let db: Db;
 

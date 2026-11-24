@@ -7,7 +7,7 @@ import {
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseOutlineJson, type DiamindApi } from "../src/shared/api";
+import { parseOutlineJson, type DiamindApi } from "@/shared/api";
 
 let app: ElectronApplication;
 let dataDir: string;

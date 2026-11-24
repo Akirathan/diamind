@@ -21,10 +21,14 @@ function copyMigrations(): Plugin {
 
 export default defineConfig({
   main: {
+    resolve: { tsconfigPaths: true },
     plugins: [copyMigrations()],
   },
-  preload: {},
+  preload: {
+    resolve: { tsconfigPaths: true },
+  },
   renderer: {
+    resolve: { tsconfigPaths: true },
     plugins: [react(), tailwindcss()],
   },
 });

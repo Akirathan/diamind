@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { Node } from "../../../shared/outline/node";
-import { isEmptyNode } from "./empty-rule";
-import { testNode } from "./test-outline";
+import type { Node } from "@/shared/outline/node";
+import { isEmptyNode } from "@/renderer/src/outline/empty-rule";
+import { testNode } from "@/renderer/src/outline/test-outline";
 
 const empty = testNode("e", "root", "a0", "");
 

@@ -1,10 +1,10 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { IpcChannel, type AppInfo } from "../shared/api";
-import { openDatabase, type Db } from "./db/database";
-import { loadOutline } from "./db/outline";
-import { resolveDataDir } from "./paths";
+import { IpcChannel, type AppInfo } from "@/shared/api";
+import { openDatabase, type Db } from "@/main/db/database";
+import { loadOutline } from "@/main/db/outline";
+import { resolveDataDir } from "@/main/paths";
 
 const dataDir = resolveDataDir();
 mkdirSync(dataDir, { recursive: true });

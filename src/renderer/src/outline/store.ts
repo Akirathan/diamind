@@ -1,20 +1,20 @@
-import {
-  isEmptyChangeSet,
-  type ChangeSet,
-} from "../../../shared/outline/change-set";
+import { isEmptyChangeSet, type ChangeSet } from "@/shared/outline/change-set";
 import type {
   JsonValue,
   Node,
   NodeFormat,
   NodeUiState,
-} from "../../../shared/outline/node";
-import * as fields from "./field-commands";
-import { restoreRows, type RestoreRows } from "./restore";
-import { loadModel, type OutlineRows } from "./load";
-import type { OutlineModel, OutlineOptions } from "./model";
-import * as structure from "./structure-commands";
+} from "@/shared/outline/node";
+import * as fields from "@/renderer/src/outline/field-commands";
+import { restoreRows, type RestoreRows } from "@/renderer/src/outline/restore";
+import { loadModel, type OutlineRows } from "@/renderer/src/outline/load";
+import type {
+  OutlineModel,
+  OutlineOptions,
+} from "@/renderer/src/outline/model";
+import * as structure from "@/renderer/src/outline/structure-commands";
 
-export type { RestoreRows } from "./restore";
+export type { RestoreRows } from "@/renderer/src/outline/restore";
 
 export interface OutlineEvent {
   /** Changed and deleted nodes, plus the parents whose children changed. */

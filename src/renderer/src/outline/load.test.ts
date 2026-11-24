@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { OutlineStore } from "./store";
+import { OutlineStore } from "@/renderer/src/outline/store";
 import {
   createOutline,
   dump,
   expectOutlineError,
   outline,
   testNode,
-} from "./test-outline";
+} from "@/renderer/src/outline/test-outline";
 
 describe("load", () => {
   it("creates the global root for an empty outline", () => {

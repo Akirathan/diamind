@@ -2,8 +2,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openDatabase, type Db } from "./database";
-import { MIGRATIONS_FOLDER } from "./test-db";
+import { openDatabase, type Db } from "@/main/db/database";
+import { MIGRATIONS_FOLDER } from "@/main/db/test-db";
 
 describe("openDatabase", () => {
   let dir: string;
