@@ -1,5 +1,6 @@
 import { Annotation, EditorState, type Extension } from "@codemirror/state";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
+import { markdownPreview } from "@/renderer/src/markdown/preview";
 import type { OutlineStore } from "@/renderer/src/outline/store";
 import { Pool } from "@/renderer/src/outline-view/pool";
 import { textChange } from "@/renderer/src/outline-view/text-change";
@@ -31,6 +32,7 @@ export class NodeEditors {
     this.extensions = [
       theme,
       EditorView.lineWrapping,
+      markdownPreview,
       EditorView.updateListener.of((update) => this.onEditorUpdate(update)),
     ];
     this.pool = new Pool(
