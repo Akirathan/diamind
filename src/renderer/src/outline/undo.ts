@@ -1,5 +1,6 @@
 import type { ChangeSet, TableChanges } from "@/shared/outline/change-set";
 import type { Node, NodeUiState } from "@/shared/outline/node";
+import type { NodeCursor } from "@/renderer/src/outline/cursor";
 import type {
   OutlineEvent,
   OutlineStore,
@@ -12,11 +13,20 @@ export const MERGE_PAUSE_MS = 1000;
 /** The oldest steps above this limit are dropped. */
 export const MAX_UNDO_STEPS = 1000;
 
+/** Connects the history to the text cursor of the editors. */
+export interface UndoCursor {
+  /** The cursor before the change that the history is about to record. */
+  get(): NodeCursor | null;
+  /** Called after each undo and redo. `cursor` may point to a node that does not exist. */
+  restore(cursor: NodeCursor | null, changes: ChangeSet): void;
+}
+
 export interface UndoOptions {
   /** Epoch milliseconds. */
   now?: () => number;
   mergePauseMs?: number;
   maxSteps?: number;
+  cursor?: UndoCursor;
 }
 
 /** `undefined` means that the row does not exist. */
@@ -31,6 +41,8 @@ interface Step {
   /** Steps with the same key can merge, e.g. `text:<id>`; `null` never merges. */
   mergeKey: string | null;
   lastChangeAt: number;
+  cursorBefore: NodeCursor | null;
+  cursorAfter: NodeCursor | null;
 }
 
 /**
@@ -44,11 +56,11 @@ export class UndoHistory {
   private readonly now: () => number;
   private readonly mergePauseMs: number;
   private readonly maxSteps: number;
+  private readonly cursor: UndoCursor | null;
   private readonly unsubscribe: () => void;
   private group: Step | null = null;
-  private groupDepth = 0;
   private mergeOpen = false;
-  private applying = false;
+  private recording = true;
 
   constructor(
     private readonly store: OutlineStore,
@@ -57,6 +69,7 @@ export class UndoHistory {
     this.now = options.now ?? Date.now;
     this.mergePauseMs = options.mergePauseMs ?? MERGE_PAUSE_MS;
     this.maxSteps = options.maxSteps ?? MAX_UNDO_STEPS;
+    this.cursor = options.cursor ?? null;
     this.unsubscribe = store.subscribe((event) => this.record(event));
   }
 
@@ -76,6 +89,7 @@ export class UndoHistory {
     }
     const changes = this.apply(step, "before");
     this.redoStack.push(step);
+    this.cursor?.restore(step.cursorBefore, changes);
     return changes;
   }
 
@@ -87,27 +101,51 @@ export class UndoHistory {
     }
     const changes = this.apply(step, "after");
     this.undoStack.push(step);
+    this.cursor?.restore(step.cursorAfter ?? step.cursorBefore, changes);
     return changes;
   }
 
   /**
-   * Records all commands of `run` as one step. Transactions can nest.
-   * If `run` throws, the commands that succeeded before still form a step.
+   * Records all commands of `run` as one step. If `run` throws, its commands
+   * are undone and the history is as before.
+   * A nested transaction joins the outermost one, which alone decides: an
+   * error that is caught inside the outermost `run` undoes nothing.
    */
   transaction<T>(run: () => T): T {
-    if (this.groupDepth === 0) {
-      this.group = newStep(null, this.now());
+    if (this.group !== null) {
+      return run();
     }
-    this.groupDepth++;
+    const group = this.newStep(null);
+    this.group = group;
+    let result: T;
+    try {
+      result = run();
+    } catch (error) {
+      this.apply(group, "before");
+      throw error;
+    } finally {
+      this.group = null;
+    }
+    this.pushStep(group);
+    return result;
+  }
+
+  /** Runs commands that the user cannot undo. */
+  untracked<T>(run: () => T): T {
+    const { recording } = this;
+    this.recording = false;
     try {
       return run();
     } finally {
-      this.groupDepth--;
-      if (this.groupDepth === 0) {
-        const group = this.group as Step;
-        this.group = null;
-        this.pushStep(group);
-      }
+      this.recording = recording;
+    }
+  }
+
+  /** Sets where redo of the current transaction, or of the last step, puts the cursor. */
+  setCursorAfter(cursor: NodeCursor): void {
+    const step = this.group ?? this.undoStack[this.undoStack.length - 1];
+    if (step !== undefined) {
+      step.cursorAfter = cursor;
     }
   }
 
@@ -127,15 +165,14 @@ export class UndoHistory {
   }
 
   private record(event: OutlineEvent): void {
-    if (this.applying) {
+    if (!this.recording) {
       return;
     }
-    this.redoStack.length = 0;
-    const now = this.now();
     if (this.group !== null) {
       addChanges(this.group, event.changes);
       return;
     }
+    const now = this.now();
     const mergeKey = mergeKeyOf(event.changes);
     const top = this.undoStack[this.undoStack.length - 1];
     if (
@@ -146,10 +183,11 @@ export class UndoHistory {
       now - top.lastChangeAt < this.mergePauseMs
     ) {
       addChanges(top, event.changes);
+      this.redoStack.length = 0;
       top.lastChangeAt = now;
       return;
     }
-    const step = newStep(mergeKey, now);
+    const step = this.newStep(mergeKey);
     addChanges(step, event.changes);
     this.pushStep(step);
   }
@@ -158,6 +196,7 @@ export class UndoHistory {
     if (step.nodes.size === 0 && step.uiState.size === 0) {
       return;
     }
+    this.redoStack.length = 0;
     this.undoStack.push(step);
     if (this.undoStack.length > this.maxSteps) {
       this.undoStack.shift();
@@ -166,7 +205,7 @@ export class UndoHistory {
   }
 
   private popStep(stack: Step[]): Step | undefined {
-    if (this.groupDepth > 0) {
+    if (this.group !== null) {
       throw new Error("Undo and redo are not allowed inside a transaction");
     }
     this.mergeOpen = false;
@@ -177,22 +216,19 @@ export class UndoHistory {
     const nodes = collectRows(step.nodes, side);
     const uiState = collectRows(step.uiState, side);
     const rows: RestoreRows = { nodes, uiState };
-    this.applying = true;
-    try {
-      return this.store.restoreRows(rows);
-    } finally {
-      this.applying = false;
-    }
+    return this.untracked(() => this.store.restoreRows(rows));
   }
-}
 
-function newStep(mergeKey: string | null, now: number): Step {
-  return {
-    nodes: new Map(),
-    uiState: new Map(),
-    mergeKey,
-    lastChangeAt: now,
-  };
+  private newStep(mergeKey: string | null): Step {
+    return {
+      nodes: new Map(),
+      uiState: new Map(),
+      mergeKey,
+      lastChangeAt: this.now(),
+      cursorBefore: this.cursor?.get() ?? null,
+      cursorAfter: null,
+    };
+  }
 }
 
 function addChanges(step: Step, changes: ChangeSet): void {

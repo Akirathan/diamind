@@ -9,6 +9,8 @@ const BULLET_CENTER_PX = 24;
 
 interface OutlineRowViewProps extends OutlineRow {
   index: number;
+  /** The height of the rows above that are not rendered. */
+  gapAbove: number;
   session: OutlineSession;
   measure: (element: HTMLElement | null) => void;
 }
@@ -20,6 +22,7 @@ export const OutlineRowView = memo(function OutlineRowView({
   depth,
   hasChildren,
   collapsed,
+  gapAbove,
   session,
   measure,
 }: OutlineRowViewProps) {
@@ -43,7 +46,7 @@ export const OutlineRowView = memo(function OutlineRowView({
       data-index={index}
       data-node-id={id}
       className="relative flex items-start py-0.5 leading-5"
-      style={{ paddingLeft: depth * INDENT_PX }}
+      style={{ marginTop: gapAbove, paddingLeft: depth * INDENT_PX }}
     >
       <IndentLines
         id={id}

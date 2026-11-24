@@ -96,11 +96,12 @@ describe("CurrentIndentLine", () => {
     expect(zoomed.currentRows()).toEqual(["a11:0"]);
   });
 
-  it("follows the current node when it moves in the tree", () => {
+  it("follows the current node when it moves in the tree", async () => {
     const { store, currentNode, currentRows, notified } = setup();
     currentNode.set("a2");
     const before = notified();
     store.indent("a2");
+    await Promise.resolve();
     expect(notified()).toBeGreaterThan(before);
     expect(currentRows()).toEqual(["a11:1", "a2:1"]);
   });

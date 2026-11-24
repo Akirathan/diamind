@@ -101,7 +101,7 @@ describe("changesRows", () => {
 });
 
 describe("OutlineRowsSource", () => {
-  it("recomputes the rows and notifies only on a structure change", () => {
+  it("recomputes the rows and notifies only on a structure change", async () => {
     const { store } = createOutline(SOURCE);
     const source = new OutlineRowsSource(store, ROOT);
     let notified = 0;
@@ -109,12 +109,26 @@ describe("OutlineRowsSource", () => {
     const first = source.getRows();
 
     store.setText("a", "x");
+    await Promise.resolve();
     expect(notified).toBe(0);
     expect(source.getRows()).toBe(first);
 
     store.setCollapsed("a", true);
-    expect(notified).toBe(1);
     expect(rowsText(source.getRows())).toEqual(["0:a", "0:b", "1:b1", "0:c"]);
+    await Promise.resolve();
+    expect(notified).toBe(1);
+  });
+
+  it("notifies once about several changes in one tick", async () => {
+    const { store } = createOutline(SOURCE);
+    const source = new OutlineRowsSource(store, ROOT);
+    let notified = 0;
+    source.subscribe(() => notified++);
+    store.setCollapsed("a", true);
+    store.deleteNode("b");
+    await Promise.resolve();
+    expect(notified).toBe(1);
+    expect(rowsText(source.getRows())).toEqual(["0:a", "0:c"]);
   });
 
   it("keeps the rows current without a subscriber", () => {

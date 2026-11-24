@@ -69,10 +69,11 @@ export function changesRows(changes: ChangeSet): boolean {
 
 /**
  * The visible rows of an outline, recomputed only when the structure changes.
- * Fits `useSyncExternalStore`.
+ * Several changes in one tick cause one notification. Fits `useSyncExternalStore`.
  */
 export class OutlineRowsSource {
   private rows: OutlineRow[];
+  private stale = false;
   private readonly listeners = new Set<() => void>();
   private readonly unsubscribe: () => void;
 
@@ -82,12 +83,9 @@ export class OutlineRowsSource {
   ) {
     this.rows = flattenVisible(store, rootId);
     this.unsubscribe = store.subscribe((event) => {
-      if (!changesRows(event.changes)) {
-        return;
-      }
-      this.rows = flattenVisible(this.store, this.rootId);
-      for (const listener of this.listeners) {
-        listener();
+      if (!this.stale && changesRows(event.changes)) {
+        this.stale = true;
+        queueMicrotask(() => this.notify());
       }
     });
   }
@@ -99,10 +97,22 @@ export class OutlineRowsSource {
     };
   };
 
-  readonly getRows = (): readonly OutlineRow[] => this.rows;
+  readonly getRows = (): readonly OutlineRow[] => {
+    if (this.stale) {
+      this.stale = false;
+      this.rows = flattenVisible(this.store, this.rootId);
+    }
+    return this.rows;
+  };
 
   dispose(): void {
     this.unsubscribe();
     this.listeners.clear();
+  }
+
+  private notify(): void {
+    for (const listener of this.listeners) {
+      listener();
+    }
   }
 }

@@ -127,9 +127,12 @@ uiState: Map<string, NodeUiState>;
 - `UndoHistory` subscribes to the store. For each changed row it keeps the version before and after the change.
   - Undo and redo restore these exact rows, as a normal change set. The write path saves it like any other change.
 - `transaction()` groups several commands into one step.
-  - It is atomic. If a command throws, all commands of the transaction are undone. #todo implemented in #9.
+  - It is atomic. If a command throws, all commands of the transaction are undone.
 - Consecutive `setText` of the same node merge into one step until a pause (1 s) or a cursor move. The same for `setNote`.
   - `setText` and `setNote` do not merge with each other.
+- Undo puts the cursor where it was before the step. Also if the change is elsewhere.
+  - If that node is not visible, the cursor goes to the end of a changed visible node.
+- The empty node that the app creates in an empty outline is not an undo step.
 - The stack keeps the last 1000 steps.
 
 ## Startup

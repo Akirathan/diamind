@@ -126,6 +126,74 @@ export function deleteNode(model: OutlineModel, id: string): ChangeSet {
   });
 }
 
+/** Appends the children of the node to the children of `newParentId`. */
+export function moveChildren(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): ChangeSet {
+  const moved = checkMoveChildren(model, id, newParentId);
+  return model.record(() => appendChildren(model, moved, newParentId));
+}
+
+/** Deletes the node, but appends its children to the children of `newParentId`. */
+export function dissolveNode(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): ChangeSet {
+  model.checkNotRoot(id, "deleted");
+  const moved = checkMoveChildren(model, id, newParentId);
+  return model.record(() => {
+    appendChildren(model, moved, newParentId);
+    model.removeNode(id);
+  });
+}
+
+/** Returns the children of `id`. */
+function checkMoveChildren(
+  model: OutlineModel,
+  id: string,
+  newParentId: string,
+): readonly string[] {
+  model.getNode(id);
+  model.getNode(newParentId);
+  if (model.isInSubtree(newParentId, id)) {
+    throw new OutlineError(
+      "moveIntoSelf",
+      "Children cannot be moved into the subtree of their parent",
+    );
+  }
+  const moved = [...model.childIds(id)];
+  // Several children bring their own last two nodes, so they cannot break the rule.
+  if (moved.length === 1) {
+    const siblings = model.childIds(newParentId);
+    checkEmptyTail(
+      siblings,
+      [...siblings.filter((s) => s !== id), ...moved],
+      (s) => isEmptyNode(model.getNode(s)),
+    );
+  }
+  return moved;
+}
+
+function appendChildren(
+  model: OutlineModel,
+  ids: readonly string[],
+  newParentId: string,
+): void {
+  const now = model.now();
+  for (const id of ids) {
+    const last = model.childIds(newParentId).at(-1) ?? null;
+    model.putNode({
+      ...model.getNode(id),
+      parentId: newParentId,
+      sortKey: model.sortKeyAfter(newParentId, last),
+      modifiedAt: now,
+    });
+  }
+}
+
 function relocate(
   model: OutlineModel,
   node: Node,
